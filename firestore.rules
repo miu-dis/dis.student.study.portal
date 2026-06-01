@@ -1,0 +1,155 @@
+// =============================================================================
+// Firestore Security Rules — DIS Student Study Portal
+// =============================================================================
+// 
+// Collections:
+//   notices          — Notice board posts (admin write, all auth read)
+//   routines         — Daily class schedules (admin write, all auth read)
+//   course_mappings  — Course-to-semester mappings (admin write, all auth read)
+//   resources        — Student-uploaded files/links (auth write own, all auth read)
+//   users            — User profiles (self write, admin full, all auth read)
+//   attendance_sessions — Attendance sessions (admin write, all auth read)
+//   attendance_records  — Per-student attendance marks (admin write, own read)
+//   forum_threads    — Discussion threads (auth create, admin/owner manage)
+//   forum_replies    — Thread replies (auth create, admin/owner manage)
+//
+// Deploy to Firebase Console → Firestore → Rules
+// =============================================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper: check if user is authenticated ─────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // ── Helper: get current user's role from their profile doc ─────
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // ── Helper: get current user's role (with fallback for new users)
+    function getUserRole() {
+      let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return userData != null && userData.role == 'admin';
+    }
+
+    // ── Helper: author is the current user ─────────────────────────
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // notices
+    // ═══════════════════════════════════════════════════════════════
+    match /notices/{noticeId} {
+      // Anyone authenticated can read notices
+      allow read: if isAuthenticated();
+      // Only admin can create/update/delete notices
+      allow create, update, delete: if isAuthenticated() && isAdmin();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // routines
+    // ═══════════════════════════════════════════════════════════════
+    match /routines/{routineId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && isAdmin();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // course_mappings
+    // ═══════════════════════════════════════════════════════════════
+    match /course_mappings/{mappingId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && isAdmin();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // resources
+    // ═══════════════════════════════════════════════════════════════
+    match /resources/{resourceId} {
+      // All authenticated users can read resources
+      allow read: if isAuthenticated();
+      // Authenticated users can create resources
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid;
+      // Resource owner or admin can update/delete
+      allow update, delete: if isAuthenticated()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // users
+    // ═══════════════════════════════════════════════════════════════
+    match /users/{userId} {
+      // All authenticated users can see user profiles (needed for
+      // student directory, attendance marking, resource author display)
+      allow read: if isAuthenticated();
+      // Users can only create their own profile
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      // Users can update their own profile; admin can update anyone
+      allow update: if isAuthenticated()
+        && (request.auth.uid == userId || isAdmin());
+      // Only admin can delete user profiles
+      allow delete: if isAuthenticated() && isAdmin();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // attendance_sessions
+    // ═══════════════════════════════════════════════════════════════
+    match /attendance_sessions/{sessionId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && isAdmin();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // attendance_records
+    // ═══════════════════════════════════════════════════════════════
+    match /attendance_records/{recordId} {
+      // Students can read their own attendance records; admin can read all
+      allow read: if isAuthenticated()
+        && (resource.data.studentUID == request.auth.uid || isAdmin());
+      // Only admin can write attendance records
+      allow create, update, delete: if isAuthenticated() && isAdmin();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // forum_threads
+    // ═══════════════════════════════════════════════════════════════
+    match /forum_threads/{threadId} {
+      // All authenticated users can read threads
+      allow read: if isAuthenticated();
+      // All authenticated users can create threads
+      allow create: if isAuthenticated()
+        && request.resource.data.authorUID == request.auth.uid;
+      // Thread owner or admin can update/delete
+      allow update, delete: if isAuthenticated()
+        && (resource.data.authorUID == request.auth.uid || isAdmin());
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // forum_replies
+    // ═══════════════════════════════════════════════════════════════
+    match /forum_replies/{replyId} {
+      // All authenticated users can read replies
+      allow read: if isAuthenticated();
+      // All authenticated users can create replies
+      allow create: if isAuthenticated()
+        && request.resource.data.authorUID == request.auth.uid;
+      // Reply author or admin can delete; admin can also update
+      allow update: if isAuthenticated() && isAdmin();
+      allow delete: if isAuthenticated()
+        && (resource.data.authorUID == request.auth.uid || isAdmin());
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Default: deny everything else
+    // ═══════════════════════════════════════════════════════════════
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

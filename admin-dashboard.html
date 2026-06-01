@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Preconnect to critical third-party origins for faster resource loading -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://www.gstatic.com">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; frame-src 'self' https:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <title>DIS Portal - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/portal-ui.css">
+    <link rel="stylesheet" href="assets/css/toast.css">
+    <link rel="stylesheet" href="assets/css/ui-states.css">
+</head>
+
+<body class="bg-gray-100 font-sans invisible portal-page-enter">
+
+    <a href="#adminMainContent" class="skip-to-content">Skip to main content</a>
+    <div class="portal-live-region" aria-live="polite" aria-atomic="true" id="ariaLiveRegion"></div>
+
+    <nav
+        class="portal-nav-root bg-emerald-900 text-white shadow-md p-4 sticky top-0 z-50 transition-shadow duration-300">
+        <div class="container mx-auto flex justify-between items-center gap-3">
+            <div class="flex items-center space-x-3 min-w-0">
+                <img src="assets/img/logo.png" alt="Logo" class="h-10 w-auto shrink-0" loading="lazy">
+                <h1 class="text-base sm:text-xl font-bold tracking-wide truncate">DIS Master Admin Dashboard</h1>
+            </div>
+            <div class="relative shrink-0">
+                <button type="button" id="navMenuBtn"
+                    class="portal-menu-trigger portal-btn flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-950/80 hover:bg-emerald-950 border border-emerald-700 text-lg"
+                    aria-label="Menu" aria-expanded="false" aria-controls="navMenuDropdown">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div id="navMenuBackdrop" class="portal-menu-backdrop" aria-hidden="true"></div>
+    <div id="navMenuDropdown" class="portal-menu-panel bg-white text-gray-800 rounded-xl border border-gray-100"
+        role="menu" aria-hidden="true">
+        <div class="portal-menu-stagger py-1">
+            <button type="button" id="logoutBtn"
+                class="portal-menu-panel__item portal-btn w-full px-4 py-3 text-left text-xs font-semibold text-red-700 hover:bg-red-50">
+                <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout
+            </button>
+            <a href="index.html"
+                class="portal-menu-panel__item portal-btn block w-full px-4 py-3 text-left text-xs font-semibold text-emerald-800 hover:bg-emerald-50 border-t border-gray-50">
+                <i class="fa-solid fa-user-graduate mr-2"></i>Student Portal
+            </a>
+        </div>
+    </div>
+
+    <main class="container mx-auto px-4 py-8 space-y-8" id="adminMainContent">
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="portal-card bg-white rounded-xl shadow p-6 border-t-4 border-emerald-700">
+                <h3 class="text-sm font-bold text-gray-800 mb-4">Upload Routine Schedule</h3>
+                <form id="routineForm" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <input type="text" id="subject" placeholder="Subject Name" required
+                        class="p-2 border rounded"><input type="text" id="courseCode" placeholder="Course Code" required
+                        class="p-2 border rounded"><input type="text" id="room" placeholder="Room No" required
+                        class="p-2 border rounded"><input type="text" id="batchNumber" placeholder="Batch" required
+                        class="p-2 border rounded"><input type="text" id="teacherCode" placeholder="Teacher Name/Code"
+                        required class="p-2 border rounded">
+                    <select id="classDay" class="p-2 border rounded">
+                        <option value="N/A">Not Applicable</option>
+                        <option value="Saturday">Saturday</option>
+                        <option value="Sunday">Sunday</option>
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Friday">Friday</option>
+                    </select>
+                    <input type="time" id="startTime" required class="p-2 border rounded"><input type="time"
+                        id="endTime" required class="p-2 border rounded">
+                    <select id="gender" class="p-2 border rounded">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Combined">Combined</option>
+                    </select><select id="boardType" class="p-2 border rounded">
+                        <option value="daily">Daily Adjustment</option>
+                        <option value="permanent">Permanent Board</option>
+                    </select>
+                    <button type="submit"
+                        class="portal-btn md:col-span-2 bg-emerald-700 text-white py-2.5 rounded-lg font-bold hover:bg-emerald-800">Publish
+                        Schedule</button>
+                </form>
+            </div>
+
+            <div class="portal-card bg-white rounded-xl shadow p-6 border-t-4 border-indigo-600">
+                <h3 class="text-sm font-bold text-indigo-900 mb-3"><i class="fa-solid fa-map-location-dot mr-1"></i>
+                    Running Course Mapping Wizard</h3>
+                <p class="text-[10px] text-gray-400 mb-3">কোন সেমিস্টারে কোন কোর্স হচ্ছে তা সিলেক্ট করে এড করে দিন।</p>
+                <form id="courseMapForm" class="space-y-2.5 text-xs">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-1">
+                        <select id="mapYear" class="p-2 border rounded bg-white font-bold">
+                            <option value="1st Year">1st Yr</option>
+                            <option value="2nd Year">2nd Yr</option>
+                            <option value="3rd Year">3rd Yr</option>
+                            <option value="4th Year">4th Yr</option>
+                        </select>
+                        <select id="mapTermNum" class="p-2 border rounded bg-white font-bold">
+                            <option value="1st Trimester">1st Tri</option>
+                            <option value="2nd Trimester">2nd Tri</option>
+                            <option value="3rd Trimester">3rd Tri</option>
+                        </select>
+                        <select id="mapTerm" class="p-2 border rounded bg-white font-bold"></select>
+                        <select id="mapSessYear" class="p-2 border rounded bg-white font-bold">
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                            <option value="2029">2029</option>
+                            <option value="2030">2030</option>
+                        </select>
+                    </div>
+                    <div class="border-t pt-2 space-y-2">
+                        <input type="text" id="mapCourseCode" placeholder="Course Code (e.g. IS-1201)" required
+                            class="w-full p-2 border rounded">
+                        <input type="text" id="mapCourseTitle" placeholder="Course Full Title (e.g. Usul al-Shashi)"
+                            required class="w-full p-2 border rounded">
+                        <input type="text" id="mapCourseTeacher" placeholder="Assign Faculty Lecturer Name" required
+                            class="w-full p-2 border rounded">
+                    </div>
+                    <button type="submit"
+                        class="portal-btn w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-bold shadow-sm"><i
+                            class="fa-solid fa-square-plus mr-1"></i> Sync & Map Course</button>
+                </form>
+            </div>
+
+            <div class="portal-card bg-white rounded-xl shadow p-6 border-t-4 border-amber-500">
+                <h3 class="text-sm font-bold text-gray-800 mb-4">Broadcast Urgent Notice</h3>
+                <form id="noticeForm" class="space-y-3">
+                    <div class="flex items-center gap-1 flex-wrap">
+                        <span class="text-[10px] text-gray-500 font-bold mr-1">Format:</span>
+                        <button type="button" id="boldBtn"
+                            class="px-2.5 py-1 text-[11px] font-bold bg-gray-100 hover:bg-gray-700 hover:text-white border rounded transition"
+                            title="Bold (select text first)"><b>B</b></button>
+                        <button type="button" id="italicBtn"
+                            class="px-2.5 py-1 text-[11px] italic font-serif bg-gray-100 hover:bg-gray-700 hover:text-white border rounded transition"
+                            title="Italic (select text first)"><i>I</i></button>
+                        <span class="text-[9px] text-gray-400 ml-1">Select text then click B or I</span>
+                    </div>
+                    <textarea id="noticeContent" required rows="6"
+                        class="w-full p-2 border rounded-md text-sm font-mono leading-relaxed"
+                        placeholder="Type notice... Enter = new line. Select text & click B for bold, I for italic."></textarea>
+                    <button type="submit"
+                        class="portal-btn w-full bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-lg font-bold">Publish
+                        Notice</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="portal-card bg-white p-4 rounded-xl shadow border-t-4 border-amber-500">
+                <h3 class="text-xs font-bold text-gray-700 mb-3 flex items-center justify-between"><span>Manage
+                        Notices</span><span id="noticeCount"
+                        class="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full">0</span></h3>
+                <div id="adminNoticeList" class="space-y-2 max-h-96 overflow-y-auto text-xs pr-1">
+                    <div class="ui-state ui-state--loading" role="status">
+                        <div class="ui-state__spinner"></div>
+                        <p class="ui-state__message">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="portal-card bg-white p-4 rounded-xl shadow border-t-4 border-indigo-600">
+                <h3 class="text-xs font-bold text-gray-700 mb-3 flex items-center justify-between"><span>Course Mappings
+                        Matrix</span><span id="mappingCount"
+                        class="text-[10px] bg-indigo-50 px-2 py-0.5 rounded-full text-indigo-700 font-bold"
+                        title="Total mapped courses">0 courses</span></h3>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-[10px] text-gray-500 shrink-0">সেমিস্টার:</span>
+                    <select id="mappingSemesterSelect"
+                        class="w-full p-1.5 border border-indigo-200 rounded-md text-[11px] font-bold bg-white text-indigo-700 focus:ring-2 focus:ring-indigo-300 focus:outline-none">
+                        <option value="__all__">📋 All Courses</option>
+                    </select>
+                </div>
+                <div id="adminMappingList" class="space-y-2 max-h-96 overflow-y-auto text-xs pr-1">
+                    <div class="ui-state ui-state--loading" role="status">
+                        <div class="ui-state__spinner"></div>
+                        <p class="ui-state__message">Loading master mappings...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="portal-card bg-white p-4 rounded-xl shadow border-t-4 border-emerald-600 mt-6">
+            <h3 class="text-sm font-bold text-gray-700 mb-2 flex items-center justify-between flex-wrap gap-2">
+                <span>Manage Routines</span>
+                <span id="routineCount" class="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full">0 total</span>
+            </h3>
+            <p class="text-[10px] text-gray-400 mb-2">দিন বা Daily ট্যাবে ক্লিক করে শুধু সেই দিনের রুটিন এডিট/ডিলিট
+                করুন।</p>
+            <div id="routineDayTabs" class="flex flex-wrap gap-1 mb-2 border-b border-slate-200 pb-2"></div>
+            <div id="adminRoutineList" class="space-y-2 max-h-[22rem] overflow-y-auto text-xs pr-1">
+                <div class="ui-state ui-state--loading" role="status">
+                    <div class="ui-state__spinner"></div>
+                    <p class="ui-state__message">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="portal-card bg-white p-6 rounded-xl shadow border-t-4 border-purple-600 mb-8">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center justify-between">
+                <span><i class="fa-solid fa-folder-open text-purple-600 mr-2"></i> Student Uploaded Resources</span>
+                <span id="resourceAdminCount"
+                    class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold">0</span>
+            </h3>
+            <p class="text-[10px] text-gray-500 mb-3">সকল স্টুডেন্টের আপলোড করা নোট/ফাইল এখান থেকে এডিট বা ডিলিট করুন।
+            </p>
+            <div id="adminResourceList"
+                class="space-y-2 max-h-[28rem] overflow-y-auto text-xs pr-1 border border-dashed rounded-lg p-2">
+                <div class="ui-state ui-state--loading" role="status">
+                    <div class="ui-state__spinner"></div>
+                    <p class="ui-state__message">Loading resources...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="portal-card bg-white p-6 rounded-xl shadow border-t-4 border-blue-600">
+            <h3 class="text-lg font-bold text-gray-800 mb-4"><i
+                    class="fa-solid fa-hospital-user text-blue-600 mr-2"></i> Student Directory Base</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left text-gray-500 border">
+                    <thead class="text-gray-700 uppercase bg-gray-50 border-b">
+                        <tr>
+                            <th class="px-4 py-3">Name (UID)</th>
+                            <th class="px-4 py-3">Batch / Session</th>
+                            <th class="px-4 py-3 text-red-600">Blood</th>
+                            <th class="px-4 py-3">Mobile No</th>
+                            <th class="px-4 py-3">Emergency Contact</th>
+                            <th class="px-4 py-3">Role Status</th>
+                            <th class="px-4 py-3 text-center">Admin Controls</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTableBody">
+                        <tr>
+                            <td colspan="7">
+                                <div class="ui-state ui-state--loading" role="status">
+                                    <div class="ui-state__spinner"></div>
+                                    <p class="ui-state__message">Loading directory accounts...</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ─── Attendance System ─── -->
+        <div class="portal-card bg-white p-6 rounded-xl shadow border-t-4 border-rose-600 mt-6" id="attendanceSection">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center justify-between flex-wrap gap-2">
+                <span><i class="fa-solid fa-clipboard-user text-rose-600 mr-2"></i> Attendance Management</span>
+                <span id="attendanceCount" class="text-xs bg-rose-100 text-rose-800 px-2 py-1 rounded-full font-bold">0
+                    sessions</span>
+            </h3>
+            <p class="text-[10px] text-gray-500 mb-3">Create attendance sessions, mark student attendance, and view
+                reports.</p>
+            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4" id="attendanceFormContainer">
+                <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Create Attendance Session</p>
+            </div>
+            <div class="mb-4">
+                <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Attendance Sessions</p>
+                <div id="attendanceSessionList" class="space-y-2 max-h-[24rem] overflow-y-auto pr-1">
+                    <div class="ui-state ui-state--loading" role="status">
+                        <div class="ui-state__spinner"></div>
+                        <p class="ui-state__message">Loading sessions...</p>
+                    </div>
+                </div>
+            </div>
+            <div id="attendanceMarkingArea" class="border-t border-gray-200 pt-4 mt-4 hidden"></div>
+            <div class="border-t border-gray-200 pt-4 mt-4">
+                <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Attendance Report</p>
+                <div id="attendanceReportArea">
+                    <div class="ui-state ui-state--loading" role="status">
+                        <div class="ui-state__spinner"></div>
+                        <p class="ui-state__message">Loading report...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── Forum Moderation ──────────────────────────────── -->
+        <div class="portal-card bg-white p-6 rounded-xl shadow border-t-4 border-indigo-600 mt-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center justify-between flex-wrap gap-2">
+                <span><i class="fa-solid fa-comments text-indigo-600 mr-2"></i><span id="adminForumTitle">Discussion
+                        Forum</span></span>
+                <span class="text-xs text-gray-400 font-normal" id="forumThreadCount">0 threads</span>
+            </h3>
+            <div id="adminForumList" class="space-y-3 max-h-[600px] overflow-y-auto">
+                <div class="ui-state ui-state--loading" role="status">
+                    <div class="ui-state__spinner"></div>
+                    <p class="ui-state__message">Loading threads...</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="editModal"
+        class="portal-modal-backdrop fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+        <div class="portal-modal-panel bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 relative">
+            <h3 class="text-base font-bold text-gray-800 mb-4 border-b pb-2 flex items-center"><i
+                    class="fa-solid fa-pen-to-square text-emerald-700 mr-2"></i> Update Management Entry</h3>
+            <div id="modalFormContainer"></div>
+            <div class="flex justify-end space-x-2 mt-4 pt-3 border-t">
+                <button type="button" onclick="closeEditModal()"
+                    class="portal-btn px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold text-xs">Cancel</button>
+                <button type="button" id="modalSaveBtn"
+                    class="portal-btn px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-semibold text-xs">Save
+                    Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { showToast } from "./assets/js/toast.js";
+        import { renderLoadingState, renderEmptyState, renderErrorState, clearUIState } from "./assets/js/ui-states.js";
+        import { auth, db } from "./assets/js/app.js";
+        import { formatNoticeContent } from "./assets/js/noticeFormat.js";
+        import { deletePortalFile, openResourceFile } from "./assets/js/fileStorage.js";
+        import { fillSessionTermSelect } from "./assets/js/academicTerms.js";
+        import { initPortalUI, refreshPortalUI } from "./assets/js/portal-ui.js";
+        import { t } from "./assets/js/i18n.js";
+
+        var adminT = function (key) { return t("admin", key); };
+        import { onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { doc, getDoc, getDocs, setDoc, collection, addDoc, onSnapshot, query, orderBy, where, deleteDoc, updateDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import {
+            formatTimeTo12Hour, routineStartMinutes, compareRoutineByTime,
+            ROUTINE_TAB_ORDER, routineTabKey, renderRoutineCard,
+            renderRoutineTabBar, renderRoutineListForTab, buildRoutineEditForm,
+            saveRoutineEdit, handleRoutineFormSubmit,
+        } from "./assets/js/admin/routineManager.js";
+        import {
+            buildMappingCard, renderMappingDropdown, renderMappingListForTab,
+            handleCourseMapSubmit, buildCourseEditForm, saveCourseEdit, deleteCourseMappingEntry,
+        } from "./assets/js/admin/courseMapper.js";
+        import {
+            initNoticeToolbar, handleNoticeFormSubmit, buildNoticeEditForm,
+            initNoticeEditToolbar, saveNoticeEdit, renderNoticeList,
+        } from "./assets/js/admin/noticeManager.js";
+        import { renderStudentTable } from "./assets/js/admin/studentManager.js";
+        import {
+            renderAdminResourceList, handleAdminResourceClick,
+            buildResourceEditForm, initResourceEditPreview, saveResourceEdit,
+        } from "./assets/js/admin/resourceManager.js";
+        import {
+            buildAttendanceForm, renderAttendanceSessionList,
+            buildAttendanceMarkingUI, collectAttendanceRecords,
+            renderAttendanceRecords, computeAttendanceStats, renderAttendanceReport,
+            handleAttendanceSessionSubmit, saveAttendanceRecords, deleteAttendanceSession,
+        } from "./assets/js/admin/attendanceManager.js";
+        import { renderAdminForumPanel } from "./assets/js/admin/forumManager.js";
+        fillSessionTermSelect(document.getElementById("mapTerm"));
+        initPortalUI();
+
+        // ─── Shared state ───
+        let activeEditId = null;
+        let activeEditCollection = "";
+        let activeMapDocKey = "";
+        let activeMapIndex = null;
+
+        let activeRoutineTab = "Saturday";
+        let cachedRoutineGroups = {};
+
+        let activeMappingTab = "__all__";
+        let cachedMappingGroups = {};
+        let _mappingSelectWired = false;
+
+        // ─── Attendance state ───
+        let attendanceCourses = [];
+        let cachedAttendanceSessions = null;
+        let cachedAttendanceRecords = [];
+        let _currentAdminUID = null;
+        let _currentAdminName = "";
+
+        // ─── Security check ───
+        onAuthStateChanged(auth, async (user) => {
+            try {
+                if (!user) window.location.replace("./dept-gate-2026.html");
+                else {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists() && userDoc.data().role === "admin") {
+                        _currentAdminUID = user.uid;
+                        _currentAdminName = userDoc.data().name || "Admin";
+                        document.body.classList.remove("invisible");
+                        refreshPortalUI();
+                    } else {
+                        window.location.replace("./index.html");
+                    }
+                }
+            } catch (err) {
+                console.error("Admin auth check error:", err);
+                showToast(adminT("alertActionFailed"), "error");
+            }
+        });
+
+        // ─── Board type → class day toggle ───
+        const boardTypeEl = document.getElementById("boardType");
+        const classDayEl = document.getElementById("classDay");
+        boardTypeEl.addEventListener("change", () => {
+            if (boardTypeEl.value === "permanent" && classDayEl.value === "N/A") {
+                classDayEl.value = "Saturday";
+            }
+        });
+
+        // ─── Notice toolbar ───
+        initNoticeToolbar(document.getElementById("noticeContent"), "boldBtn", "italicBtn");
+
+        // ─── Form submissions ───
+        document.getElementById("routineForm").addEventListener("submit", (e) =>
+            handleRoutineFormSubmit(e, db, collection, addDoc, showToast, adminT)
+        );
+        document.getElementById("courseMapForm").addEventListener("submit", (e) =>
+            handleCourseMapSubmit(e, db, { doc, getDoc, setDoc, updateDoc, arrayUnion }, showToast, adminT)
+        );
+        document.getElementById("noticeForm").addEventListener("submit", (e) =>
+            handleNoticeFormSubmit(e, { db, collection, addDoc }, showToast, adminT)
+        );
+
+        // ─── Routine real-time listener (tabbed view) ───
+        onSnapshot(query(collection(db, "routines"), orderBy("createdAt", "desc")), (snapshot) => {
+            document.getElementById("routineCount").innerText = `${snapshot.size} total`;
+            if (snapshot.empty) {
+                document.getElementById("routineDayTabs").innerHTML = "";
+                renderEmptyState(document.getElementById("adminRoutineList"), adminT("noRoutines"));
+                cachedRoutineGroups = {};
+                return;
+            }
+            const groups = {};
+            ROUTINE_TAB_ORDER.forEach((k) => { groups[k] = []; });
+            const sortedDocs = [...snapshot.docs].sort((a, b) =>
+                compareRoutineByTime(a.data(), b.data())
+            );
+            sortedDocs.forEach((res) => {
+                const key = routineTabKey(res.data());
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(res);
+            });
+            cachedRoutineGroups = groups;
+            activeRoutineTab = renderRoutineTabBar(groups, activeRoutineTab,
+                document.getElementById("routineDayTabs"), (newTab) => {
+                    activeRoutineTab = newTab;
+                    renderRoutineTabBar(cachedRoutineGroups, activeRoutineTab,
+                        document.getElementById("routineDayTabs"), () => { });
+                    renderRoutineListForTab(cachedRoutineGroups, activeRoutineTab,
+                        document.getElementById("adminRoutineList"));
+                });
+            renderRoutineListForTab(cachedRoutineGroups, activeRoutineTab,
+                document.getElementById("adminRoutineList"));
+        });
+
+        // ─── Course mapping real-time listener ───
+        const mappingSelectEl = document.getElementById("mappingSemesterSelect");
+        onSnapshot(collection(db, "course_mappings"), (snapshot) => {
+            const adminMappingList = document.getElementById("adminMappingList");
+            let totalCourses = 0;
+            if (snapshot.empty) {
+                document.getElementById("mappingCount").innerText = "0 courses";
+                mappingSelectEl.innerHTML = '<option value="__all__">📋 All Courses (0)</option>';
+                renderEmptyState(adminMappingList, adminT("noMappings"));
+                _mappingSelectWired = false;
+                return;
+            }
+            const groups = {};
+            snapshot.forEach((docSnap) => {
+                const docKey = docSnap.id;
+                const courses = docSnap.data().courses || [];
+                if (!groups[docKey]) groups[docKey] = [];
+                courses.forEach((course, index) => {
+                    groups[docKey].push({ docKey, index, course });
+                    totalCourses++;
+                });
+            });
+            cachedMappingGroups = groups;
+            if (activeMappingTab !== "__all__" && !groups[activeMappingTab]) {
+                activeMappingTab = "__all__";
+            }
+            const semesterCount = Object.keys(groups).length;
+            const courseLabel = totalCourses === 1 ? "1 course" : `${totalCourses} courses`;
+            const semLabel = semesterCount === 1 ? "1 semester" : `${semesterCount} semesters`;
+            document.getElementById("mappingCount").innerText = `${courseLabel} · ${semLabel}`;
+            document.getElementById("mappingCount").title = "Select a semester from the dropdown to filter";
+            _mappingSelectWired = renderMappingDropdown(groups, activeMappingTab,
+                mappingSelectEl, _mappingSelectWired, (newTab) => {
+                    activeMappingTab = newTab;
+                    renderMappingListForTab(cachedMappingGroups, activeMappingTab,
+                        document.getElementById("adminMappingList"));
+                });
+            renderMappingListForTab(cachedMappingGroups, activeMappingTab,
+                document.getElementById("adminMappingList"));
+        });
+
+        // Extract courses for attendance form from mappings
+        function extractAttendanceCourses() {
+            const seen = new Set();
+            const courses = [];
+            Object.values(cachedMappingGroups).forEach((entries) => {
+                entries.forEach((entry) => {
+                    const { course } = entry;
+                    if (course && course.code && !seen.has(course.code)) {
+                        seen.add(course.code);
+                        courses.push({ code: course.code, title: course.title || course.code });
+                    }
+                });
+            });
+            return courses.sort((a, b) => a.code.localeCompare(b.code));
+        }
+
+        // ─── Attendance: Sessions real-time listener ───
+        const attSessionListEl = document.getElementById("attendanceSessionList");
+        const attCountEl = document.getElementById("attendanceCount");
+        const attFormContainer = document.getElementById("attendanceFormContainer");
+        const attMarkingArea = document.getElementById("attendanceMarkingArea");
+        const attReportArea = document.getElementById("attendanceReportArea");
+
+        onSnapshot(query(collection(db, "attendance_sessions"), orderBy("createdAt", "desc")), (snapshot) => {
+            cachedAttendanceSessions = snapshot;
+            attCountEl.innerText = `${snapshot.size} session${snapshot.size !== 1 ? "s" : ""}`;
+            if (snapshot.empty) {
+                renderEmptyState(attSessionListEl, adminT("noAttendanceSessions"));
+                return;
+            }
+            renderAttendanceSessionList(snapshot, attSessionListEl, {
+                onMarkAttendance: async (sessionId, sessionData) => {
+                    try {
+                        // Load students (role=student only) and existing records for this session
+                        const userSnap = await getDocs(query(collection(db, "users"), where("role", "==", "student")));
+                        const students = [];
+                        userSnap.forEach((d) => {
+                            const data = d.data();
+                            if (data.role !== "admin") {
+                                students.push({
+                                    uid: d.id,
+                                    studentId: data.uid || d.id,
+                                    name: data.name || data.uid || d.id,
+                                });
+                            }
+                        });
+                        const existingRecords = new Map();
+                        cachedAttendanceRecords
+                            .filter((r) => r.sessionId === sessionId)
+                            .forEach((r) => existingRecords.set(r.studentUID, r.status));
+                        attMarkingArea.innerHTML = buildAttendanceMarkingUI(sessionId, sessionData, students, existingRecords);
+                        attMarkingArea.classList.remove("hidden");
+
+                        // Wire "All Present" button
+                        const allPresentBtn = attMarkingArea.querySelector("#attMarkAllPresent");
+                        if (allPresentBtn) {
+                            allPresentBtn.addEventListener("click", () => {
+                                attMarkingArea.querySelectorAll("input[type='radio'][data-status='present']").forEach((r) => {
+                                    r.checked = true;
+                                });
+                            });
+                        }
+                        // Wire "Save Attendance" button
+                        const saveBtn = attMarkingArea.querySelector("#attSaveAttendance");
+                        if (saveBtn) {
+                            saveBtn.addEventListener("click", async () => {
+                                try {
+                                    const records = collectAttendanceRecords(attMarkingArea);
+                                    await saveAttendanceRecords(sessionId, records, { db, doc, setDoc, collection, getDocs, query, where }, _currentAdminUID);
+                                    attMarkingArea.classList.add("hidden");
+                                    attMarkingArea.innerHTML = "";
+                                } catch (err) {
+                                    console.error("Save attendance error:", err);
+                                    showToast(adminT("alertActionFailed"), "error");
+                                }
+                            });
+                        }
+                    } catch (err) {
+                        console.error("Mark attendance error:", err);
+                        showToast(adminT("alertActionFailed"), "error");
+                    }
+                },
+                onDeleteSession: async (sessionId) => {
+                    try {
+                        await deleteAttendanceSession(sessionId, { db, doc, deleteDoc, collection, getDocs, query, where });
+                    } catch (err) {
+                        console.error("Delete session error:", err);
+                        showToast(adminT("alertActionFailed"), "error");
+                    }
+                },
+            });
+
+            // Refresh session record counts & embedded records
+            refreshSessionRecordCounts();
+
+            // Rebuild attendance form with latest courses
+            attendanceCourses = extractAttendanceCourses();
+            attFormContainer.innerHTML = buildAttendanceForm({ courses: attendanceCourses });
+            wireAttendanceForm();
+        });
+
+        function refreshSessionRecordCounts() {
+            if (!cachedAttendanceSessions) return;
+            cachedAttendanceSessions.docs.forEach((docSnap) => {
+                const sessionId = docSnap.id;
+                const card = attSessionListEl.querySelector(`[data-session-id="${sessionId}"]`);
+                if (!card) return;
+                const countEl = card.querySelector(".session-card__record-count");
+                const recordsEl = card.querySelector(".session-card__records");
+                const records = cachedAttendanceRecords.filter((r) => r.sessionId === sessionId);
+                if (countEl) {
+                    countEl.innerText = `${records.length} marked`;
+                }
+                if (recordsEl) {
+                    recordsEl.innerHTML = renderAttendanceRecords(records.map((r) => ({
+                        studentUID: r.studentUID,
+                        studentName: r.studentName,
+                        status: r.status,
+                    })));
+                }
+            });
+        }
+
+        // ─── Attendance: Records real-time listener ───
+        onSnapshot(collection(db, "attendance_records"), (snapshot) => {
+            cachedAttendanceRecords = [];
+            snapshot.forEach((d) => {
+                cachedAttendanceRecords.push({ id: d.id, ...d.data() });
+            });
+            refreshSessionRecordCounts();
+            refreshAttendanceReport();
+        });
+
+        // ─── Attendance report ───
+        function refreshAttendanceReport() {
+            const perStudent = new Map();
+            cachedAttendanceRecords.forEach((r) => {
+                if (!perStudent.has(r.studentUID)) {
+                    perStudent.set(r.studentUID, []);
+                }
+                perStudent.get(r.studentUID).push({
+                    status: r.status,
+                    studentName: r.studentName,
+                    courseCode: r.courseCode || "",
+                    courseTitle: r.courseTitle || "",
+                });
+            });
+            if (perStudent.size === 0) {
+                renderEmptyState(attReportArea, adminT("noAttendanceRecords"));
+                return;
+            }
+            attReportArea.innerHTML = renderAttendanceReport(perStudent);
+        }
+
+        // ─── Attendance form wire-up ───
+        function wireAttendanceForm() {
+            const form = document.getElementById("attendanceSessionForm");
+            if (!form) return;
+            form.addEventListener("submit", (e) =>
+                handleAttendanceSessionSubmit(e, { db, collection, addDoc, serverTimestamp }, _currentAdminUID, _currentAdminName)
+            );
+        }
+
+
+        // ─── Resources real-time listener ───
+        const adminResourceListEl = document.getElementById("adminResourceList");
+        const resourceCountEl = document.getElementById("resourceAdminCount");
+        onSnapshot(query(collection(db, "resources"), orderBy("createdAt", "desc")), (snapshot) => {
+            if (snapshot.empty) {
+                resourceCountEl.innerText = "0";
+                renderEmptyState(adminResourceListEl, adminT("noResources"));
+                return;
+            }
+            renderAdminResourceList(snapshot, adminResourceListEl, resourceCountEl);
+        });
+        adminResourceListEl.addEventListener("click", (e) =>
+            handleAdminResourceClick(e,
+                { db, doc, getDoc, deleteDoc },
+                { openResourceFile, deletePortalFile },
+                (id, data) => openResourceEditModal(id, data)
+            )
+        );
+
+        // ─── Notices real-time listener ───
+        onSnapshot(query(collection(db, "notices"), orderBy("createdAt", "desc")), (snapshot) => {
+            if (snapshot.empty) {
+                document.getElementById("noticeCount").innerText = "0";
+                renderEmptyState(document.getElementById("adminNoticeList"), adminT("noNotices"));
+                window._noticeContents = new Map();
+                return;
+            }
+            window._noticeContents = renderNoticeList(snapshot,
+                document.getElementById("adminNoticeList"),
+                document.getElementById("noticeCount"),
+                formatNoticeContent
+            );
+        });
+
+        // ─── Student table real-time listener (students only) ───
+        onSnapshot(query(collection(db, "users"), where("role", "==", "student")), (snapshot) => {
+            if (snapshot.empty) {
+                renderEmptyState(document.getElementById("studentTableBody"), adminT("noStudents"));
+                return;
+            }
+            renderStudentTable(snapshot, document.getElementById("studentTableBody"));
+        });
+
+        // ─── Forum moderation ───
+        var adminForumListEl = document.getElementById("adminForumList");
+        var forumThreadCountEl = document.getElementById("forumThreadCount");
+        var forumCleanup = renderAdminForumPanel(
+            adminForumListEl,
+            { db: db, collection: collection, onSnapshot: onSnapshot, query: query, orderBy: orderBy, doc: doc, updateDoc: updateDoc, deleteDoc: deleteDoc, where: where, getDocs: getDocs },
+            adminT,
+            showToast,
+            forumThreadCountEl
+        );
+
+        // ─── Edit modal openers (window globals for inline onclick) ───
+
+        window.openRoutineEditModal = (id, data) => {
+            activeEditId = id;
+            activeEditCollection = "routines";
+            document.getElementById("modalFormContainer").innerHTML = buildRoutineEditForm(id, data);
+            document.getElementById("editModal").classList.remove("hidden");
+            document.getElementById("editModal").classList.add("flex");
+        };
+
+        window.openNoticeEditModal = (id) => {
+            activeEditId = id;
+            activeEditCollection = "notices";
+            const rawContent = window._noticeContents ? (window._noticeContents.get(id) || "") : "";
+            document.getElementById("modalFormContainer").innerHTML = buildNoticeEditForm(id, rawContent);
+            document.getElementById("editModal").classList.remove("hidden");
+            document.getElementById("editModal").classList.add("flex");
+            initNoticeEditToolbar("m_boldBtn", "m_italicBtn", "m_notice_content");
+        };
+
+        window.openResourceEditModal = (id, data) => {
+            activeEditId = id;
+            activeEditCollection = "resources";
+            document.getElementById("modalFormContainer").innerHTML = buildResourceEditForm(id, data);
+            document.getElementById("editModal").classList.remove("hidden");
+            document.getElementById("editModal").classList.add("flex");
+            initResourceEditPreview({ ...data, id }, openResourceFile);
+        };
+
+        window.openCourseEditModal = (docKey, index, course) => {
+            activeEditCollection = "course_mappings";
+            activeMapDocKey = docKey;
+            activeMapIndex = index;
+            document.getElementById("modalFormContainer").innerHTML = buildCourseEditForm(docKey, index, course);
+            document.getElementById("editModal").classList.remove("hidden");
+            document.getElementById("editModal").classList.add("flex");
+        };
+
+        // ─── Modal save button ───
+        document.getElementById("modalSaveBtn").addEventListener("click", async () => {
+            try {
+                if (activeEditCollection === "routines") {
+                    await saveRoutineEdit(activeEditId, db, doc, updateDoc);
+                } else if (activeEditCollection === "notices") {
+                    await saveNoticeEdit(activeEditId, { db, doc, updateDoc });
+                } else if (activeEditCollection === "resources") {
+                    await saveResourceEdit(activeEditId, { db, doc, updateDoc });
+                } else if (activeEditCollection === "course_mappings") {
+                    await saveCourseEdit(activeMapDocKey, activeMapIndex, db, { doc, getDoc, updateDoc });
+                }
+                closeEditModal();
+            } catch (err) {
+                showToast(adminT("alertSaveFailed") + err.message, "error");
+            }
+        });
+
+        // ─── Window globals (inline onclick handlers) ───
+
+        window.deleteCourseMappingEntry = (docKey, index) =>
+            deleteCourseMappingEntry(docKey, index, db, { doc, getDoc, updateDoc });
+
+        window.closeEditModal = () => {
+            document.getElementById("editModal").classList.add("hidden");
+            document.getElementById("editModal").classList.remove("flex");
+            activeEditId = null;
+            activeMapDocKey = "";
+            activeMapIndex = null;
+        };
+
+        window.resetStudentPasswordToDefault = async (uid, name, email) => {
+            if (!confirm(`Send password reset email to ${name}?`)) return;
+            if (!email) { showToast(adminT("alertNoEmail"), "warning"); return; }
+            try {
+                await sendPasswordResetEmail(auth, email);
+                await updateDoc(doc(db, "users", uid), {
+                    mustResetPass: true,
+                    resetRequestedAt: new Date().toISOString(),
+                });
+                showToast(adminT("alertResetSent") + email + "!", "success", { duration: 6000 });
+            } catch (err) { showToast(adminT("alertResetFailed") + err.message, "error"); }
+        };
+
+        window.deleteStudentAccount = async (uid, name) => {
+            if (!confirm(`PERMANENTLY delete account of "${name}"?\n\nThis will remove the Firestore profile. The auth login will also be disabled. This cannot be undone.`)) return;
+            try {
+                await deleteDoc(doc(db, "users", uid));
+                showToast(adminT("alertAccountDeleted") + ' ("' + name + '")', "success");
+            } catch (err) { showToast(adminT("alertDeleteFailed") + err.message, "error"); }
+        };
+
+        window.deleteDataDocument = async (collectionName, id) => {
+            if (confirm("Permanently delete live item?")) {
+                try { await deleteDoc(doc(db, collectionName, id)); showToast(adminT("alertDeleteSuccess"), "success"); }
+                catch (err) { showToast(err.message, "error"); }
+            }
+        };
+
+        document.getElementById("logoutBtn").addEventListener("click", () => {
+            signOut(auth).then(() => window.location.replace("./dept-gate-2026.html")).catch(() => window.location.replace("./dept-gate-2026.html"));
+        });
+    </script>
+    <footer class="text-center py-6 text-xs text-gray-400 border-t border-gray-200 mt-8">© 2026 DIS Student Portal. All
+        rights reserved by Zubair Muhammad Zami.</footer>
+</body>
+
+</html>

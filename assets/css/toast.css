@@ -1,0 +1,169 @@
+/* ================================================================
+   Toast Notification System
+   Replaces alert() with accessible, non-blocking notifications.
+   ================================================================ */
+
+/* ── Toast Container ─────────────────────────────────────────── */
+
+.toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+    max-width: 24rem;
+    width: calc(100% - 2rem);
+    pointer-events: none;
+}
+
+/* ── Individual Toast ────────────────────────────────────────── */
+
+.toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    font-weight: 500;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.08);
+    pointer-events: auto;
+    cursor: default;
+    animation: toastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    border: 1px solid transparent;
+    word-break: break-word;
+}
+
+.toast--dismissing {
+    opacity: 0;
+    transform: translateX(120%);
+}
+
+/* ── Toast Variants ──────────────────────────────────────────── */
+
+.toast--success {
+    background: #ecfdf5;
+    color: #065f46;
+    border-color: #a7f3d0;
+}
+
+.toast--error {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.toast--warning {
+    background: #fffbeb;
+    color: #92400e;
+    border-color: #fde68a;
+}
+
+.toast--info {
+    background: #eff6ff;
+    color: #1e40af;
+    border-color: #bfdbfe;
+}
+
+/* ── Toast Icon ──────────────────────────────────────────────── */
+
+.toast__icon {
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    margin-top: 0.0625rem;
+}
+
+.toast--success .toast__icon {
+    color: #059669;
+}
+
+.toast--error .toast__icon {
+    color: #dc2626;
+}
+
+.toast--warning .toast__icon {
+    color: #d97706;
+}
+
+.toast--info .toast__icon {
+    color: #2563eb;
+}
+
+/* ── Toast Content ───────────────────────────────────────────── */
+
+.toast__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.toast__title {
+    font-weight: 600;
+    margin-bottom: 0.125rem;
+}
+
+.toast__message {
+    opacity: 0.85;
+}
+
+/* ── Toast Close Button ──────────────────────────────────────── */
+
+.toast__close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.125rem;
+    font-size: 1rem;
+    line-height: 1;
+    opacity: 0.5;
+    color: inherit;
+    transition: opacity 0.15s;
+    margin-top: 0.0625rem;
+}
+
+.toast__close:hover {
+    opacity: 1;
+}
+
+/* ── Animations ──────────────────────────────────────────────── */
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(120%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ── Reduced Motion ──────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    .toast {
+        animation: none;
+        transition: none;
+    }
+
+    .toast--dismissing {
+        opacity: 0;
+    }
+}
+
+/* ── Mobile ──────────────────────────────────────────────────── */
+
+@media (max-width: 639px) {
+    .toast-container {
+        bottom: 1rem;
+        right: 0.75rem;
+        left: 0.75rem;
+        max-width: none;
+        width: auto;
+    }
+}

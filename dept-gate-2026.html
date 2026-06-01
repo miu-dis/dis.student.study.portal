@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Preconnect to critical third-party origins for faster resource loading -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://www.gstatic.com">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; frame-src 'self' https:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <title>DIS Portal - Secure Gateway</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="assets/css/portal-ui.css">
+    <link rel="stylesheet" href="assets/css/toast.css">
+</head>
+
+<body class="portal-page-enter bg-slate-900 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <a href="#mainGatewayCard" class="skip-to-content">Skip to main content</a>
+    <div class="portal-live-region" aria-live="polite" aria-atomic="true" id="ariaLiveRegion"></div>
+
+    <div
+        class="absolute top-4 right-4 bg-slate-800 shadow rounded-lg p-1 flex items-center space-x-1 border border-slate-700">
+        <span class="text-sm px-2">🌐</span>
+        <select id="langSelector"
+            class="bg-transparent text-sm font-semibold text-gray-300 outline-none p-1 cursor-pointer">
+            <option value="en" class="bg-slate-800">English</option>
+            <option value="ar" class="bg-slate-800">العربية</option>
+            <option value="bn" class="bg-slate-800">বাংলা</option>
+        </select>
+    </div>
+
+    <div class="portal-card bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700"
+        id="mainGatewayCard">
+
+        <div class="flex justify-center mb-6">
+            <img src="assets/img/logo.png" alt="University Logo" loading="lazy"
+                class="h-24 w-auto mx-auto transition-all duration-300">
+        </div>
+
+        <div class="text-center mb-8 border-t pt-5 border-slate-700">
+            <h2 id="txtAdminTitle" class="text-2xl font-bold text-white">Central Admin Gateway</h2>
+            <p id="txtAdminSubtitle" class="text-slate-400 text-sm mt-1">Authorized personnel only</p>
+        </div>
+
+        <form id="adminLoginForm" class="space-y-5">
+            <div>
+                <label id="lblAdminEmail" class="block text-sm font-medium text-slate-300 mb-1">Secret Email ID</label>
+                <input type="email" id="adminEmail" required
+                    class="w-full bg-slate-900 text-white px-4 py-2.5 border border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition"
+                    placeholder="admin@email.com">
+            </div>
+            <div>
+                <label id="lblAdminPassword" class="block text-sm font-medium text-slate-300 mb-1">Master
+                    Password</label>
+                <input type="password" id="adminPassword" required
+                    class="w-full bg-slate-900 text-white px-4 py-2.5 border border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition"
+                    placeholder="••••••••">
+            </div>
+            <button type="submit" id="btnAdminLogin"
+                class="portal-btn w-full bg-emerald-600 text-white py-2.5 rounded-lg font-semibold hover:bg-emerald-700 shadow-lg shadow-emerald-900/30 mt-2">Verify
+                & Enter</button>
+        </form>
+
+    </div>
+
+    <!-- i18n module: apply translations -->
+    <script type="module">
+        import { t, getLang, setLang, getDir } from "./assets/js/i18n.js";
+
+        function applyLanguage(lang) {
+            document.body.dir = getDir(lang);
+            if (getDir(lang) === "rtl") {
+                document.body.classList.add('text-right');
+            } else {
+                document.body.classList.remove('text-right');
+            }
+            document.getElementById('txtAdminTitle').innerText = t('gateway', 'title');
+            document.getElementById('txtAdminSubtitle').innerText = t('gateway', 'subtitle');
+            document.getElementById('lblAdminEmail').innerText = t('gateway', 'lblEmail');
+            document.getElementById('lblAdminPassword').innerText = t('gateway', 'lblPassword');
+            document.getElementById('btnAdminLogin').innerText = t('gateway', 'btn');
+        }
+
+        const langSelector = document.getElementById('langSelector');
+        if (langSelector) {
+            const savedLang = getLang();
+            langSelector.value = savedLang;
+            applyLanguage(savedLang);
+            langSelector.addEventListener('change', (e) => {
+                setLang(e.target.value);
+                applyLanguage(e.target.value);
+            });
+        }
+    </script>
+
+    <!-- Admin login: Firebase auth + role check -->
+    <script type="module">
+        import { showToast } from "./assets/js/toast.js";
+        import { validateForm } from "./assets/js/form-validation.js";
+        import { auth, db } from "./assets/js/app.js";
+        import { t } from "./assets/js/i18n.js";
+        import { signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const adminLoginForm = document.getElementById('adminLoginForm');
+        const gatewayRules = {
+            adminEmail: [{ type: "required", message: "Email is required" }, { type: "email", message: "Invalid email format" }],
+            adminPassword: [{ type: "required", message: "Password is required" }, { type: "minLength", value: 6, message: "Password must be at least 6 characters" }],
+        };
+
+        adminLoginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const vl = validateForm(adminLoginForm, gatewayRules);
+            if (!vl.valid) return;
+
+            const email = document.getElementById('adminEmail').value.trim();
+            const password = document.getElementById('adminPassword').value;
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                const userDocRef = doc(db, "users", user.uid);
+                const userDoc = await getDoc(userDocRef);
+
+                if (userDoc.exists() && userDoc.data().role === 'admin') {
+                    showToast(t('gateway', 'success'), "success", { duration: 2000 });
+                    setTimeout(() => window.location.href = "admin-dashboard.html", 600);
+                } else {
+                    showToast(t('gateway', 'accessDenied'), "error");
+                    await signOut(auth);
+                    window.location.reload();
+                }
+
+            } catch (error) {
+                showToast(t('gateway', 'error'), "error");
+                console.error(error);
+            }
+        });
+    </script>
+
+    <!-- portal UI init -->
+    <script type="module">
+        import { initPortalUI } from "./assets/js/portal-ui.js";
+        initPortalUI();
+    </script>
+</body>
+
+</html>

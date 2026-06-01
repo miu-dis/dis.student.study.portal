@@ -1,0 +1,47 @@
+# ─── Dependencies ───
+/node_modules/
+
+# ─── Environment & Secrets ───
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+service-account*.json
+firebase-service-account.json
+
+# ─── OS Files ───
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Editor / IDE ───
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── Supabase ───
+supabase/.temp/
+
+# ─── Firebase ───
+.firebase/
+firebase-debug.log*
+firebase.json
+.firebaserc
+
+# ─── Build Artifacts ───
+dist/
+build/
+*.log
+
+# ─── Temporary Files ───
+tmp/
+temp/
+*.bak
+*.orig
+
+# ─── AI / Plans (optional: keep plans/ tracked for documentation) ───
+# Uncomment the next line if you want to exclude planning docs:
+# plans/

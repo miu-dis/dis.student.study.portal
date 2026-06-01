@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Preconnect to critical third-party origins for faster resource loading -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://www.gstatic.com">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; frame-src 'self' https:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <title>DIS Portal - Auth</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/portal-ui.css">
+    <link rel="stylesheet" href="assets/css/toast.css">
+</head>
+
+<body class="portal-page-enter bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <a href="#mainAuthCard" class="skip-to-content">Skip to main content</a>
+    <div class="portal-live-region" aria-live="polite" aria-atomic="true" id="ariaLiveRegion"></div>
+
+    <div
+        class="absolute top-4 right-4 bg-white shadow rounded-lg p-1 flex items-center space-x-1 border border-gray-200">
+        <span class="text-sm px-2">🌐</span>
+        <select id="langSelector"
+            class="bg-transparent text-sm font-semibold text-gray-700 outline-none p-1 cursor-pointer">
+            <option value="en">English</option>
+            <option value="bn">বাংলা</option>
+        </select>
+    </div>
+
+    <div class="portal-card bg-white p-8 rounded-xl shadow-lg w-full max-w-md" id="mainAuthCard">
+        <div class="flex justify-center mb-6">
+            <img src="assets/img/logo.png" alt="University Logo" loading="lazy"
+                class="h-24 w-auto mx-auto transition-all duration-300">
+        </div>
+
+        <div class="text-center mb-6 border-t pt-4 border-gray-100">
+            <h2 id="txtPortalTitle" class="text-2xl font-bold text-emerald-800">DIS Student Portal</h2>
+            <p id="txtPortalSubtitle" class="text-gray-500 text-sm mt-1">Department of Islamic Studies</p>
+        </div>
+
+        <div class="flex bg-gray-100 p-1 rounded-lg mb-6 border border-gray-200">
+            <button id="toggleLogin" type="button"
+                class="portal-btn w-1/2 py-2 text-center font-semibold rounded-md bg-emerald-700 text-white">Login</button>
+            <button id="toggleRegister" type="button"
+                class="portal-btn w-1/2 py-2 text-center font-semibold rounded-md text-gray-600 hover:text-emerald-700">Register</button>
+        </div>
+
+        <form id="loginForm" class="space-y-4">
+            <div>
+                <label id="lblLoginEmail" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <input type="email" id="loginEmail" required
+                    class="portal-field w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    placeholder="example@email.com">
+            </div>
+            <div>
+                <label id="lblLoginPassword" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <div class="relative">
+                    <input type="password" id="loginPassword" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none pr-10"
+                        placeholder="••••••••">
+                    <button type="button" onclick="togglePasswordVisibility('loginPassword', 'eyeIconLogin')"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-700"
+                        aria-label="Toggle password visibility">
+                        <i id="eyeIconLogin" class="fa-solid fa-eye-slash"></i>
+                    </button>
+                </div>
+            </div>
+            <button type="submit" id="btnLogin"
+                class="portal-btn w-full bg-emerald-700 text-white py-2.5 rounded-md font-semibold hover:bg-emerald-800 shadow-md">Sign
+                In</button>
+
+            <div class="text-center pt-2">
+                <a href="https://wa.me/8801602715959?text=Assalamu%20Alaikum%20Admin,%20I%20forgot%20my%20DIS%20Portal%20password.%20Please%20reset%20it."
+                    target="_blank"
+                    class="text-xs text-emerald-700 hover:text-emerald-900 font-bold inline-flex items-center gap-1 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200 transition">
+                    <i class="fa-brands fa-whatsapp text-sm text-green-600"></i> Forgot Password? Contact Admin
+                </a>
+            </div>
+        </form>
+
+        <form id="registerForm" class="space-y-4 hidden">
+            <div>
+                <label id="lblRegName" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input type="text" id="regName" required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    placeholder="Your Name">
+            </div>
+            <div>
+                <label id="lblRegUID" class="block text-sm font-medium text-gray-700 mb-1">University ID (UID)</label>
+                <input type="text" id="regUID" required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    placeholder="e.g. 30027">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label id="lblRegBatchNum" class="block text-sm font-medium text-gray-700 mb-1">Batch No</label>
+                    <input type="text" id="regBatchNum" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm"
+                        placeholder="e.g. 52">
+                </div>
+                <div>
+                    <label id="lblRegSemester" class="block text-sm font-medium text-gray-700 mb-1">Trimester</label>
+                    <select id="regSemester" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm">
+                        <option value="" disabled selected>Select Trimester</option>
+                        <option value="1st Year - 1st Sem">1st Yr - 1st Sem</option>
+                        <option value="1st Year - 2nd Sem">1st Yr - 2nd Sem</option>
+                        <option value="1st Year - 3rd Sem">1st Yr - 3rd Sem</option>
+                        <option value="2nd Year - 1st Sem">2nd Yr - 1st Sem</option>
+                        <option value="2nd Year - 2nd Sem">2nd Yr - 2nd Sem</option>
+                        <option value="2nd Year - 3rd Sem">2nd Yr - 3rd Sem</option>
+                        <option value="3rd Year - 1st Sem">3rd Yr - 1st Sem</option>
+                        <option value="3rd Year - 2nd Sem">3rd Yr - 2nd Sem</option>
+                        <option value="3rd Year - 3rd Sem">3rd Yr - 3rd Sem</option>
+                        <option value="4th Year - 1st Sem">4th Yr - 1st Sem</option>
+                        <option value="4th Year - 2nd Sem">4th Yr - 2nd Sem</option>
+                        <option value="4th Year - 3rd Sem">4th Yr - 3rd Sem</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label id="lblRegEmail" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <input type="email" id="regEmail" required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    placeholder="example@email.com">
+            </div>
+            <div>
+                <label id="lblRegPassword" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <div class="relative">
+                    <input type="password" id="regPassword" required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none pr-10"
+                        placeholder="Min. 6 digits">
+                    <button type="button" onclick="togglePasswordVisibility('regPassword', 'eyeIconRegister')"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-700"
+                        aria-label="Toggle password visibility">
+                        <i id="eyeIconRegister" class="fa-solid fa-eye-slash"></i>
+                    </button>
+                </div>
+            </div>
+            <button type="submit" id="btnRegister"
+                class="portal-btn w-full bg-emerald-700 text-white py-2.5 rounded-md font-semibold hover:bg-emerald-800 shadow-md">Complete
+                Registration</button>
+        </form>
+
+    </div>
+
+    <!-- Password visibility toggle + tab switching (non-module, called from onclick) -->
+    <script>
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove('fa-solid', 'fa-eye-slash');
+                icon.classList.add('fa-solid', 'fa-eye');
+            } else {
+                input.type = "password";
+                icon.classList.remove('fa-solid', 'fa-eye');
+                icon.classList.add('fa-solid', 'fa-eye-slash');
+            }
+        }
+
+        (function () {
+            const toggleLogin = document.getElementById('toggleLogin');
+            const toggleRegister = document.getElementById('toggleRegister');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            if (!toggleLogin || !toggleRegister) return;
+            toggleRegister.addEventListener('click', () => {
+                loginForm.classList.add('hidden'); registerForm.classList.remove('hidden');
+                toggleRegister.classList.add('bg-emerald-700', 'text-white'); toggleRegister.classList.remove('text-gray-600');
+                toggleLogin.classList.remove('bg-emerald-700', 'text-white'); toggleLogin.classList.add('text-gray-600');
+            });
+            toggleLogin.addEventListener('click', () => {
+                registerForm.classList.add('hidden'); loginForm.classList.remove('hidden');
+                toggleLogin.classList.add('bg-emerald-700', 'text-white'); toggleLogin.classList.remove('text-gray-600');
+                toggleRegister.classList.remove('bg-emerald-700', 'text-white'); toggleRegister.classList.add('text-gray-600');
+            });
+        })();
+    </script>
+
+    <!-- i18n: use shared module -->
+    <script type="module">
+        import { t, getLang, setLang, getDir } from "./assets/js/i18n.js";
+
+        function applyLanguage(lang) {
+            document.body.dir = getDir(lang);
+            document.getElementById('txtPortalTitle').innerText = t('auth', 'portalTitle');
+            document.getElementById('txtPortalSubtitle').innerText = t('auth', 'portalSubtitle');
+            document.getElementById('toggleLogin').innerText = t('auth', 'loginTab');
+            document.getElementById('toggleRegister').innerText = t('auth', 'registerTab');
+            document.getElementById('lblLoginEmail').innerText = t('auth', 'lblEmail');
+            document.getElementById('lblRegEmail').innerText = t('auth', 'lblEmail');
+            document.getElementById('lblLoginPassword').innerText = t('auth', 'lblPassword');
+            document.getElementById('lblRegPassword').innerText = t('auth', 'lblPassword');
+            document.getElementById('btnLogin').innerText = t('auth', 'btnLogin');
+            document.getElementById('lblRegName').innerText = t('auth', 'lblRegName');
+            document.getElementById('lblRegUID').innerText = t('auth', 'lblRegUID');
+            document.getElementById('lblRegBatchNum').innerText = t('auth', 'lblRegBatchNum');
+            document.getElementById('lblRegSemester').innerText = t('auth', 'lblRegSemester');
+            document.getElementById('btnRegister').innerText = t('auth', 'btnRegister');
+        }
+
+        const langSelector = document.getElementById('langSelector');
+        if (langSelector) {
+            const savedLang = getLang();
+            langSelector.value = savedLang;
+            applyLanguage(savedLang);
+            langSelector.addEventListener('change', (e) => {
+                setLang(e.target.value);
+                applyLanguage(e.target.value);
+            });
+        }
+    </script>
+
+    <!-- Firebase auth logic (unchanged) -->
+    <script type="module">
+        import { showToast } from "./assets/js/toast.js";
+        import { auth, db } from "./assets/js/app.js";
+        import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { doc, setDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { validateForm, clearAllErrors } from "./assets/js/form-validation.js";
+        import { t } from "./assets/js/i18n.js";
+
+        const loginRules = {
+            loginEmail: [
+                { type: "required", message: t("auth", "valEmailRequired") },
+                { type: "email", message: t("auth", "valEmailInvalid") }
+            ],
+            loginPassword: [
+                { type: "required", message: t("auth", "valPasswordRequired") },
+                { type: "minLength", value: 6, message: t("auth", "valPasswordMin") }
+            ]
+        };
+
+        const registerRules = {
+            regName: [
+                { type: "required", message: t("auth", "valNameRequired") }
+            ],
+            regUID: [
+                { type: "required", message: t("auth", "valUIDRequired") }
+            ],
+            regEmail: [
+                { type: "required", message: t("auth", "valEmailRequired") },
+                { type: "email", message: t("auth", "valEmailInvalid") }
+            ],
+            regPassword: [
+                { type: "required", message: t("auth", "valPasswordRequired") },
+                { type: "minLength", value: 6, message: t("auth", "valPasswordMin") }
+            ],
+            regBatchNum: [
+                { type: "required", message: t("auth", "valBatchRequired") }
+            ],
+            regSemester: [
+                { type: "required", message: t("auth", "valSemesterRequired") }
+            ]
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) return;
+            try {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists() && userDoc.data().role === "admin") {
+                    window.location.replace("./admin-dashboard.html");
+                } else {
+                    window.location.replace("./index.html");
+                }
+            } catch (err) {
+                console.error("Auth redirect check error:", err);
+                window.location.replace("./index.html");
+            }
+        });
+
+        const lForm = document.getElementById('loginForm');
+        const rForm = document.getElementById('registerForm');
+
+        if (rForm) {
+            rForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const vr = validateForm(rForm, registerRules);
+                if (!vr.valid) return;
+
+                const name = document.getElementById('regName').value.trim();
+                const email = document.getElementById('regEmail').value.trim();
+                const password = document.getElementById('regPassword').value;
+                const uid = document.getElementById('regUID').value.trim();
+                const batch = document.getElementById('regBatchNum').value.trim();
+                const semester = document.getElementById('regSemester').value;
+
+                try {
+                    const q = query(collection(db, "users"), where("universityUID", "==", uid));
+                    const querySnapshot = await getDocs(q);
+                    if (!querySnapshot.empty) {
+                        const existing = querySnapshot.docs[0].data();
+                        const adminWhatsApp = "8801602715959";
+                        const msg = `দুঃখিত! এই ইউনিভার্সিটি আইডি (UID: ${uid}) দিয়ে ইতিপূর্বেই "${existing.name || 'একজন শিক্ষার্থী'}" নামে অ্যাকাউন্ট তৈরি করা হয়েছে।\n\nএকই UID দিয়ে একাধিক অ্যাকাউন্ট তৈরি করা সম্ভব নয়।\n\nআপনার UID আগে থেকে রেজিস্টার্ড হয়ে থাকলে পাসওয়ার্ড রিসেট করতে অথবা অন্য কোনো সমস্যার জন্য এডমিনের সাথে যোগাযোগ করুন:`;
+                        if (confirm(msg + "\n\nWhatsApp এ যোগাযোগ করতে OK চাপুন।")) {
+                            window.open(`https://wa.me/${adminWhatsApp}?text=Assalamu%20Alaikum%20Admin,%20my%20UID%20${uid}%20is%20already%20registered.%20Please%20help.`, '_blank');
+                        }
+                        return;
+                    }
+
+                    const cred = await createUserWithEmailAndPassword(auth, email, password);
+                    await setDoc(doc(db, "users", cred.user.uid), {
+                        name: name, email: email, universityUID: uid, batchNumber: batch, trimester: semester,
+                        phone: "", bloodGroup: "", emergencyName: "", emergencyPhone: "", profilePic: "", role: "student"
+                    });
+                    showToast(t("auth", "alertRegSuccess"), "success", { duration: 3000 });
+                    setTimeout(() => window.location.replace("./index.html"), 800);
+                } catch (err) { showToast(t("auth", "alertRegError") + err.message, "error"); }
+            });
+        }
+
+        if (lForm) {
+            lForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const vl = validateForm(lForm, loginRules);
+                if (!vl.valid) return;
+
+                const email = document.getElementById('loginEmail').value.trim();
+                const password = document.getElementById('loginPassword').value;
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    window.location.replace("./index.html");
+                } catch (err) { showToast(t("auth", "alertLoginError") + err.message, "error"); }
+            });
+        }
+    </script>
+
+    <!-- portal UI init -->
+    <script type="module">
+        import { initPortalUI } from "./assets/js/portal-ui.js";
+        initPortalUI();
+    </script>
+</body>
+
+</html>
