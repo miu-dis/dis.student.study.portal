@@ -410,6 +410,7 @@ export async function handleResourceSubmit(e, opts) {
             url: urlPayload,
             urlType,
             storagePath,
+            userId: loggedInUserUID,
             uploadedBy: loggedInUserUID,
             updatedAt: new Date().toISOString(),
         };
