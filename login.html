@@ -226,7 +226,7 @@
     <script type="module">
         import { showToast } from "./assets/js/toast.js";
         import { auth, db } from "./assets/js/app.js";
-        import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { doc, setDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { validateForm, clearAllErrors } from "./assets/js/form-validation.js";
         import { t } from "./assets/js/i18n.js";
