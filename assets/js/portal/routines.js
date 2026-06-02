@@ -2,6 +2,19 @@
 // Routine and notice board real-time rendering for student portal
 
 /**
+ * Get today's date in Bangladesh timezone (Asia/Dhaka, UTC+6).
+ * @returns {string} ISO date string "YYYY-MM-DD"
+ */
+export function getBangladeshToday() {
+    const now = new Date();
+    const bd = new Date(now.getTime() + (6 * 60 * 60 * 1000)); // UTC+6
+    const yyyy = bd.getFullYear();
+    const mm = String(bd.getMonth() + 1).padStart(2, "0");
+    const dd = String(bd.getDate()).padStart(2, "0");
+    return yyyy + "-" + mm + "-" + dd;
+}
+
+/**
  * Parse routine start time into minutes since midnight for sorting.
  * Supports both rawStartTime and legacy timeSlot strings.
  * @param {Object} data - routine document data
@@ -48,6 +61,10 @@ export function buildRoutineCardHTML(data, t, esc) {
                 ? { label: t("genderFemale"), cls: "bg-pink-100 text-pink-700" }
                 : { label: t("genderCombined"), cls: "bg-purple-100 text-purple-700" };
 
+    const dateLabel = data.routineDate
+        ? `<div class="text-[10px] text-emerald-600 font-semibold mb-1">📅 ${esc(data.routineDate)}</div>`
+        : "";
+
     return (
         `<div class="p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm text-xs">` +
         `<div class="flex justify-between items-center mb-0.5">` +
@@ -55,6 +72,7 @@ export function buildRoutineCardHTML(data, t, esc) {
         `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${genderBadge.cls}">${genderBadge.label}</span>` +
         `</div>` +
         `<div class="mb-1 text-[11px] text-amber-700 font-bold">Batch: ${esc(data.batchNumber)}</div>` +
+        dateLabel +
         `<div class="grid grid-cols-2 text-[11px] text-gray-600 gap-y-0.5 border-t border-dashed pt-1 mt-1">` +
         `<p><b>Code:</b> ${esc(data.courseCode)}</p>` +
         `<p><b>Room:</b> ${esc(data.room)}</p>` +
@@ -92,6 +110,7 @@ export function initRoutineAndNoticeListeners(
         query(collection(db, "routines"), orderBy("createdAt", "desc")),
         (snapshot) => {
             const t = getPortalT();
+            const todayBD = getBangladeshToday();
             const dailyRoutines = [];
             const permanentByDay = {};
             Object.keys(daysWithClasses).forEach((day) => {
@@ -101,7 +120,9 @@ export function initRoutineAndNoticeListeners(
             snapshot.forEach((docSnap) => {
                 const data = docSnap.data();
                 if (data.boardType === "daily") {
-                    dailyRoutines.push(data);
+                    if (data.routineDate === todayBD) {
+                        dailyRoutines.push(data);
+                    }
                 } else if (
                     data.boardType === "permanent" &&
                     data.classDay &&

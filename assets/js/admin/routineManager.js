@@ -82,7 +82,9 @@ export function renderRoutineCard(res) {
     const tagColor = isDaily
         ? "bg-amber-100 text-amber-800 border-amber-300"
         : "bg-emerald-100 text-emerald-800 border-emerald-300";
-    const tagLabel = isDaily ? "Daily" : "Permanent";
+    const tagLabel = isDaily
+        ? (data.routineDate ? `📅 Daily (${data.routineDate})` : "Daily")
+        : "Permanent";
     const genderTag = data.gender ? ` | ${data.gender}` : "";
     const timeInfo = data.timeSlot ? ` | ${data.timeSlot}` : "";
     const dataJson = JSON.stringify(data).replace(/"/g, "\x26quot;");
@@ -160,6 +162,7 @@ export function renderRoutineListForTab(groups, activeRoutineTab, listEl) {
  */
 export function buildRoutineEditForm(id, data) {
     const esc = (s) => String(s || "").replace(/"/g, "\x26quot;");
+    const isDaily = data.boardType === "daily";
     return (
         `<div class="grid grid-cols-2 gap-2 text-xs">` +
         `<div><label class="font-bold text-gray-600">Subject Name</label><input type="text" id="m_routine_sub" value="${esc(data.subject)}" class="w-full p-2 border rounded"></div>` +
@@ -177,12 +180,12 @@ export function buildRoutineEditForm(id, data) {
         `<div>` +
         `<label class="font-bold text-gray-600">Routine Type</label>` +
         `<select id="m_routine_board" class="w-full p-2 border rounded bg-white">` +
-        `<option value="daily" ${data.boardType === "daily" ? "selected" : ""}>Daily Adjustment</option>` +
-        `<option value="permanent" ${data.boardType === "permanent" ? "selected" : ""}>Permanent Board</option>` +
+        `<option value="daily" ${isDaily ? "selected" : ""}>Daily Adjustment</option>` +
+        `<option value="permanent" ${!isDaily ? "selected" : ""}>Permanent Board</option>` +
         `</select></div>` +
         `<div>` +
         `<label class="font-bold text-gray-600">Class Day</label>` +
-        `<select id="m_routine_day" class="w-full p-2 border rounded bg-white">` +
+        `<select id="m_routine_day" class="w-full p-2 border rounded bg-white"${isDaily ? ' style="display:none"' : ""}>` +
         `<option value="N/A" ${data.classDay === "N/A" ? "selected" : ""}>Not Applicable</option>` +
         `<option value="Saturday" ${data.classDay === "Saturday" ? "selected" : ""}>Saturday</option>` +
         `<option value="Sunday" ${data.classDay === "Sunday" ? "selected" : ""}>Sunday</option>` +
@@ -191,6 +194,7 @@ export function buildRoutineEditForm(id, data) {
         `<option value="Wednesday" ${data.classDay === "Wednesday" ? "selected" : ""}>Wednesday</option>` +
         `<option value="Friday" ${data.classDay === "Friday" ? "selected" : ""}>Friday</option>` +
         `</select></div>` +
+        `<div${isDaily ? "" : ` style="display:none"`}><label class="font-bold text-gray-600">📅 Routine Date</label><input type="date" id="m_routine_date" value="${data.routineDate || ""}" class="w-full p-2 border rounded"></div>` +
         `<div><label class="font-bold text-gray-600">Starts</label><input type="time" id="m_routine_start" value="${data.rawStartTime || ""}" class="w-full p-2 border rounded"></div>` +
         `<div><label class="font-bold text-gray-600">Ends</label><input type="time" id="m_routine_end" value="${data.rawEndTime || ""}" class="w-full p-2 border rounded"></div>` +
         `</div>`
@@ -215,6 +219,7 @@ export async function saveRoutineEdit(activeEditId, db, doc, updateDoc) {
         return;
     }
 
+    const routineDateEl = document.getElementById("m_routine_date");
     await updateDoc(doc(db, "routines", activeEditId), {
         subject: document.getElementById("m_routine_sub").value.trim(),
         courseCode: document.getElementById("m_routine_code").value.trim(),
@@ -224,6 +229,7 @@ export async function saveRoutineEdit(activeEditId, db, doc, updateDoc) {
         gender: document.getElementById("m_routine_gender").value,
         boardType,
         classDay,
+        routineDate: boardType === "daily" && routineDateEl ? routineDateEl.value : null,
         rawStartTime: sTime,
         rawEndTime: eTime,
         timeSlot: `${formatTimeTo12Hour(sTime)} - ${formatTimeTo12Hour(eTime)}`,
@@ -256,6 +262,7 @@ export async function handleRoutineFormSubmit(e, db, collection, addDoc, showToa
     if (btn) btn.classList.add("portal-btn--loading");
 
     try {
+        const routineDateEl = document.getElementById("routineDate");
         await addDoc(collection(db, "routines"), {
             subject: document.getElementById("subject").value.trim(),
             courseCode: document.getElementById("courseCode").value.trim(),
@@ -268,6 +275,7 @@ export async function handleRoutineFormSubmit(e, db, collection, addDoc, showToa
             timeSlot: `${formatTimeTo12Hour(sTime)} - ${formatTimeTo12Hour(eTime)}`,
             gender: document.getElementById("gender").value,
             boardType: document.getElementById("boardType").value,
+            routineDate: boardType === "daily" && routineDateEl ? routineDateEl.value : null,
             createdAt: new Date().toISOString(),
         });
         showToast(t("routinePublished"), "success");

@@ -88,6 +88,8 @@
                         <option value="daily">Daily Adjustment</option>
                         <option value="permanent">Permanent Board</option>
                     </select>
+                    <input type="date" id="routineDate" class="p-2 border rounded"
+                        title="Only for Daily Adjustment — select the target date (Bangladesh timezone)">
                     <button type="submit"
                         class="portal-btn md:col-span-2 bg-emerald-700 text-white py-2.5 rounded-lg font-bold hover:bg-emerald-800">Publish
                         Schedule</button>
@@ -406,11 +408,33 @@
         // ─── Board type → class day toggle ───
         const boardTypeEl = document.getElementById("boardType");
         const classDayEl = document.getElementById("classDay");
-        boardTypeEl.addEventListener("change", () => {
-            if (boardTypeEl.value === "permanent" && classDayEl.value === "N/A") {
-                classDayEl.value = "Saturday";
+        const routineDateEl = document.getElementById("routineDate");
+
+        // Set default date to today (Bangladesh timezone)
+        (function setDefaultRoutineDate() {
+            var now = new Date();
+            var bd = new Date(now.getTime() + (6 * 60 * 60 * 1000));
+            var yyyy = bd.getFullYear();
+            var mm = String(bd.getMonth() + 1).padStart(2, "0");
+            var dd = String(bd.getDate()).padStart(2, "0");
+            routineDateEl.value = yyyy + "-" + mm + "-" + dd;
+        })();
+
+        function toggleRoutineDateVisibility() {
+            if (boardTypeEl.value === "daily") {
+                routineDateEl.style.display = "";
+                classDayEl.value = "N/A";
+                classDayEl.style.display = "none";
+            } else {
+                routineDateEl.style.display = "none";
+                classDayEl.style.display = "";
+                if (classDayEl.value === "N/A") {
+                    classDayEl.value = "Saturday";
+                }
             }
-        });
+        }
+        boardTypeEl.addEventListener("change", toggleRoutineDateVisibility);
+        toggleRoutineDateVisibility();
 
         // ─── Notice toolbar ───
         initNoticeToolbar(document.getElementById("noticeContent"), "boldBtn", "italicBtn");
