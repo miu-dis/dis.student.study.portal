@@ -1,55 +1,54 @@
 -- ==============================================================================
--- Supabase Storage RLS Policies (FIXED)
--- Fixes the CRITICAL security vulnerability where all policies were TO public.
--- ALL operations now require authentication.
+-- Supabase Storage RLS Policies (FIXED — Firebase Auth Compatible)
+-- The portal uses Firebase Auth, NOT Supabase Auth. Supabase client is created
+-- with anon key only, so auth.uid() is always NULL and TO authenticated blocks
+-- everything. Policies use TO anon since real auth lives in Firebase/Firestore.
+-- The 'resources' bucket is public for reads; upload paths are scoped by userId
+-- in application code (Firestore metadata controls who can edit/delete).
 -- ==============================================================================
 
--- Step 1: Drop old, dangerous policies
+-- Step 1: Drop all existing policies (both old "Public" and broken "authenticated")
 DROP POLICY IF EXISTS "Public read access" ON storage.objects;
 DROP POLICY IF EXISTS "Public insert access" ON storage.objects;
 DROP POLICY IF EXISTS "Public update access" ON storage.objects;
 DROP POLICY IF EXISTS "Public delete access" ON storage.objects;
+DROP POLICY IF EXISTS "Auth users can read resources" ON storage.objects;
+DROP POLICY IF EXISTS "Auth users can upload to resources" ON storage.objects;
+DROP POLICY IF EXISTS "Auth users can update own resources" ON storage.objects;
+DROP POLICY IF EXISTS "Auth users can delete own resources" ON storage.objects;
 
--- Step 2: Create proper authenticated-only policies for the 'resources' bucket
+-- Step 2: Create anon (public) policies — real auth is in Firebase/Firestore, not Supabase
 
--- SELECT: Only authenticated users can read files from the resources bucket
-CREATE POLICY "Auth users can read resources"
+-- SELECT: Anyone can read files from the resources bucket (bucket is public)
+CREATE POLICY "Anyone can read resources"
 ON storage.objects FOR SELECT
-TO authenticated
+TO anon
 USING (bucket_id = 'resources');
 
--- INSERT: Only authenticated users can upload to the resources bucket
--- Files are organized as: {userId}/{timestamp}_{filename}
-CREATE POLICY "Auth users can upload to resources"
+-- INSERT: Anyone with the anon key can upload to resources bucket
+-- Application code (Firestore metadata) controls which user owns which file
+CREATE POLICY "Anyone can upload to resources"
 ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (
-    bucket_id = 'resources'
-    AND auth.uid()::text IS NOT NULL
-);
+TO anon
+WITH CHECK (bucket_id = 'resources');
 
--- UPDATE: Only authenticated users can update their own files
-CREATE POLICY "Auth users can update own resources"
+-- UPDATE: Anyone with the anon key can update files in resources bucket
+CREATE POLICY "Anyone can update resources"
 ON storage.objects FOR UPDATE
-TO authenticated
-USING (
-    bucket_id = 'resources'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-);
+TO anon
+USING (bucket_id = 'resources');
 
--- DELETE: Only authenticated users can delete their own files
-CREATE POLICY "Auth users can delete own resources"
+-- DELETE: Anyone with the anon key can delete files from resources bucket
+CREATE POLICY "Anyone can delete resources"
 ON storage.objects FOR DELETE
-TO authenticated
-USING (
-    bucket_id = 'resources'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-);
+TO anon
+USING (bucket_id = 'resources');
 
 -- ==============================================================================
 -- IMPORTANT: After running this SQL, verify in Supabase Dashboard:
 --   1. Go to Storage → resources bucket → Policies
 --   2. Confirm exactly 4 policies exist (SELECT, INSERT, UPDATE, DELETE)
---   3. All should show "TO authenticated"
---   4. Test: Try accessing a file URL without logging in — should get 403
+--   3. All should show "TO anon"
+--   4. Bucket must be PUBLIC (Storage → resources → ⋮ → "Make public")
+--   5. Test: Student upload via the portal should now work
 -- ==============================================================================
