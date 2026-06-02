@@ -1215,6 +1215,7 @@
                     window.location.replace("./admin-dashboard.html");
                     return;
                 }
+                document.body.classList.remove("invisible");
                 loggedInUserName = (uData.name || "").trim();
                 var uYear = uData.profileYear || "1st Year";
                 var uTermNum = uData.profileTermNum || "1st Trimester";
