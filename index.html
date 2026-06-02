@@ -1049,7 +1049,7 @@
             document.getElementById("dailyRoutineList"),
             document.getElementById("noticeList"),
             { Saturday: false, Sunday: false, Monday: false, Tuesday: false, Wednesday: false, Friday: false },
-            window.portalT,
+            function () { return window.portalT; },
             escapeHtml
         );
 
