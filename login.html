@@ -297,9 +297,15 @@
                 const semester = document.getElementById('regSemester').value;
 
                 try {
+                    // Create auth user first (so we are authenticated for Firestore reads)
+                    const cred = await createUserWithEmailAndPassword(auth, email, password);
+
+                    // Now authenticated — check for duplicate UID
                     const q = query(collection(db, "users"), where("universityUID", "==", uid));
                     const querySnapshot = await getDocs(q);
                     if (!querySnapshot.empty) {
+                        // Rollback: delete the just-created auth account
+                        try { await cred.user.delete(); } catch (_) { /* best effort */ }
                         const existing = querySnapshot.docs[0].data();
                         const adminWhatsApp = "8801602715959";
                         const msg = `দুঃখিত! এই ইউনিভার্সিটি আইডি (UID: ${uid}) দিয়ে ইতিপূর্বেই "${existing.name || 'একজন শিক্ষার্থী'}" নামে অ্যাকাউন্ট তৈরি করা হয়েছে।\n\nএকই UID দিয়ে একাধিক অ্যাকাউন্ট তৈরি করা সম্ভব নয়।\n\nআপনার UID আগে থেকে রেজিস্টার্ড হয়ে থাকলে পাসওয়ার্ড রিসেট করতে অথবা অন্য কোনো সমস্যার জন্য এডমিনের সাথে যোগাযোগ করুন:`;
@@ -309,7 +315,6 @@
                         return;
                     }
 
-                    const cred = await createUserWithEmailAndPassword(auth, email, password);
                     await setDoc(doc(db, "users", cred.user.uid), {
                         name: name, email: email, universityUID: uid, batchNumber: batch, trimester: semester,
                         phone: "", bloodGroup: "", emergencyName: "", emergencyPhone: "", profilePic: "", role: "student"
