@@ -715,7 +715,7 @@
         import { formatNoticeContent } from "./assets/js/noticeFormat.js";
         import { escapeHtml } from "./assets/js/sanitize.js";
         import { initPortalUI, refreshPortalUI } from "./assets/js/portal-ui.js";
-        import { onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { collection, onSnapshot, query, orderBy, where, doc, getDoc, getDocs, updateDoc, addDoc, deleteDoc, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // ---- Portal modules ----
@@ -1374,6 +1374,16 @@
             try {
                 if (newPass !== "") {
                     if (newPass.length < 6) { showToast(window.portalT('alertPassMin'), "warning"); return; }
+                    // Re-authenticate before changing password (Firebase requires recent login)
+                    var currentPass = prompt("নতুন পাসওয়ার্ড সেট করতে, প্রথমে আপনার বর্তমান পাসওয়ার্ড দিন:\n\n(Enter your current password to confirm):");
+                    if (!currentPass) { showToast(window.portalT('alertPassMin'), "warning"); return; }
+                    try {
+                        var credential = EmailAuthProvider.credential(auth.currentUser.email, currentPass);
+                        await reauthenticateWithCredential(auth.currentUser, credential);
+                    } catch (reauthErr) {
+                        showToast("⛔ বর্তমান পাসওয়ার্ড ভুল! পাসওয়ার্ড পরিবর্তন হয়নি।\n\n(Current password incorrect — password not changed.)", "error", { duration: 5000 });
+                        return;
+                    }
                     await updatePassword(auth.currentUser, newPass);
                 }
                 await updateDoc(doc(db, "users", loggedInUserUID), {
