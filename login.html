@@ -335,8 +335,27 @@
                 const email = document.getElementById('loginEmail').value.trim();
                 const password = document.getElementById('loginPassword').value;
                 try {
-                    await signInWithEmailAndPassword(auth, email, password);
-                    window.location.replace("./index.html");
+                    const cred = await signInWithEmailAndPassword(auth, email, password);
+                    // Verify Firestore user document exists (guard against orphaned auth accounts)
+                    const userDoc = await getDoc(doc(db, "users", cred.user.uid));
+                    if (!userDoc.exists()) {
+                        await signOut(auth);
+                        showToast("⛔ এই অ্যাকাউন্টটি সম্পূর্ণ নয়। দয়া করে পুনরায় রেজিস্ট্রেশন করুন।\n\n(Incomplete account — please register again.)", "error", { duration: 6000 });
+                        // Switch to registration tab so user can re-register
+                        document.getElementById('tabLogin').classList.remove('text-emerald-600', 'border-emerald-600');
+                        document.getElementById('tabLogin').classList.add('text-gray-600');
+                        document.getElementById('tabRegister').classList.remove('text-gray-600');
+                        document.getElementById('tabRegister').classList.add('text-emerald-600', 'border-emerald-600');
+                        document.getElementById('loginForm').classList.add('hidden');
+                        document.getElementById('registerForm').classList.remove('hidden');
+                        document.getElementById('regEmail').value = email;
+                        return;
+                    }
+                    if (userDoc.data().role === "admin") {
+                        window.location.replace("./admin-dashboard.html");
+                    } else {
+                        window.location.replace("./index.html");
+                    }
                 } catch (err) { showToast(t("auth", "alertLoginError") + err.message, "error"); }
             });
         }
