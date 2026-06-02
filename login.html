@@ -269,14 +269,15 @@
             if (!user) return;
             try {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists() && userDoc.data().role === "admin") {
+                if (!userDoc.exists()) return; // Doc not yet created — registration in progress, let form handler redirect
+                if (userDoc.data().role === "admin") {
                     window.location.replace("./admin-dashboard.html");
                 } else {
                     window.location.replace("./index.html");
                 }
             } catch (err) {
                 console.error("Auth redirect check error:", err);
-                window.location.replace("./index.html");
+                // Don't redirect on error — let form handlers manage navigation
             }
         });
 
