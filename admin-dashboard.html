@@ -414,9 +414,9 @@
         (function setDefaultRoutineDate() {
             var now = new Date();
             var bd = new Date(now.getTime() + (6 * 60 * 60 * 1000));
-            var yyyy = bd.getFullYear();
-            var mm = String(bd.getMonth() + 1).padStart(2, "0");
-            var dd = String(bd.getDate()).padStart(2, "0");
+            var yyyy = bd.getUTCFullYear();
+            var mm = String(bd.getUTCMonth() + 1).padStart(2, "0");
+            var dd = String(bd.getUTCDate()).padStart(2, "0");
             routineDateEl.value = yyyy + "-" + mm + "-" + dd;
         })();
 

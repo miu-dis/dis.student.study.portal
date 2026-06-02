@@ -8,9 +8,9 @@
 export function getBangladeshToday() {
     const now = new Date();
     const bd = new Date(now.getTime() + (6 * 60 * 60 * 1000)); // UTC+6
-    const yyyy = bd.getFullYear();
-    const mm = String(bd.getMonth() + 1).padStart(2, "0");
-    const dd = String(bd.getDate()).padStart(2, "0");
+    const yyyy = bd.getUTCFullYear();
+    const mm = String(bd.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(bd.getUTCDate()).padStart(2, "0");
     return yyyy + "-" + mm + "-" + dd;
 }
 
