@@ -415,6 +415,15 @@ export async function handleResourceSubmit(e, opts) {
             updatedAt: new Date().toISOString(),
         };
 
+        // Attach daily class resource metadata when uploading from daily resources view
+        const dailyCtx = window._dailyUploadContext;
+        if (dailyCtx) {
+            if (dailyCtx.routineDate) payload.routineDate = dailyCtx.routineDate;
+            if (dailyCtx.routineSlot) payload.routineSlot = dailyCtx.routineSlot;
+            if (dailyCtx.routineId) payload.routineId = dailyCtx.routineId;
+            payload.uploadedAt = new Date().toISOString().slice(0, 10); // YYYY-MM-DD upload date
+        }
+
         if (editId) {
             await updateDoc(doc(db, "resources", editId), payload);
             alert(t("alertResourceUpdated"));

@@ -93,6 +93,15 @@ const TRANSLATIONS = {
             loadingCourses: "Loading courses...", noResults: "No items found.", loadError: "Failed to load data.", retryBtn: "Retry",
             loadingForums: "Loading discussions...", noForums: "No discussions yet.", errorForums: "Failed to load discussions.",
             noAttendanceData: "No attendance records yet.",
+            // Daily Class Resources
+            dailyResourcesTitle: "Daily Class Resources", dailyResourcesBack: "Back to Home",
+            dailyResourcesPrevDay: "Previous Day", dailyResourcesNextDay: "Next Day",
+            dailyResourcesJumpDate: "Jump to Date", dailyResourcesClassDate: "Class Date",
+            dailyResourcesUploaded: "Uploaded", dailyResourcesNoResources: "No resources for this class yet.",
+            dailyResourcesLoading: "Loading daily resources...", dailyResourcesError: "Failed to load resources.",
+            dailyResourcesBtnUpload: "Add Resource", dailyResourcesSlot: "Slot",
+            dailyResourcesBy: "By", dailyResourcesCount: "resource(s)",
+            dailyResourcesBadge: "Resources",
         },
         bn: {
             navTitle: "ডিআইএস স্টুডেন্ট পোর্টাল", btnNavLogin: "লগইন / রেজিস্টার", btnMyProfile: "আমার প্রোফাইল", btnLogout: "লগআউট",
@@ -176,6 +185,15 @@ const TRANSLATIONS = {
             loadingCourses: "কোর্স লোড হচ্ছে...", noResults: "কিছু পাওয়া যায়নি।", loadError: "ডেটা লোড করতে ব্যর্থ।", retryBtn: "আবার চেষ্টা",
             loadingForums: "আলোচনা লোড হচ্ছে...", noForums: "এখনো কোনো আলোচনা নেই।", errorForums: "আলোচনা লোড করতে ব্যর্থ।",
             noAttendanceData: "এখনো কোনো উপস্থিতি রেকর্ড নেই।",
+            // Daily Class Resources
+            dailyResourcesTitle: "দৈনিক ক্লাস রিসোর্স", dailyResourcesBack: "হোমে ফিরুন",
+            dailyResourcesPrevDay: "আগের দিন", dailyResourcesNextDay: "পরের দিন",
+            dailyResourcesJumpDate: "তারিখে যান", dailyResourcesClassDate: "ক্লাসের তারিখ",
+            dailyResourcesUploaded: "আপলোড", dailyResourcesNoResources: "এই ক্লাসের জন্য এখনো কোনো রিসোর্স নেই।",
+            dailyResourcesLoading: "দৈনিক রিসোর্স লোড হচ্ছে...", dailyResourcesError: "রিসোর্স লোড করতে ব্যর্থ।",
+            dailyResourcesBtnUpload: "রিসোর্স যোগ করুন", dailyResourcesSlot: "স্লট",
+            dailyResourcesBy: "প্রকাশক", dailyResourcesCount: "টি রিসোর্স",
+            dailyResourcesBadge: "রিসোর্স",
         }
     },
 

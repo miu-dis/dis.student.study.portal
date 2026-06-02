@@ -1,6 +1,8 @@
 // assets/js/portal/routines.js
 // Routine and notice board real-time rendering for student portal
 
+import { resourceMatchesCourse } from "../courseUtils.js";
+
 /**
  * Get today's date in Bangladesh timezone (Asia/Dhaka, UTC+6).
  * @returns {string} ISO date string "YYYY-MM-DD"
@@ -47,13 +49,32 @@ export function compareRoutineByTime(a, b) {
 }
 
 /**
+ * Count resources for a specific routine (course + routineDate).
+ * @param {Object} routineData - routine document data { courseCode, routineDate }
+ * @param {Array} resourcesSnapshot - array of resource docs
+ * @returns {number}
+ */
+export function countResourcesForRoutine(routineData, resourcesSnapshot) {
+    if (!resourcesSnapshot || !routineData || !routineData.courseCode || !routineData.routineDate) return 0;
+    let count = 0;
+    const course = { code: routineData.courseCode, title: routineData.subject || "", teacher: routineData.teacherCode || "" };
+    resourcesSnapshot.forEach((resDoc) => {
+        const rData = resDoc.data ? { id: resDoc.id, ...resDoc.data() } : resDoc;
+        if (rData.routineDate !== routineData.routineDate) return;
+        if (resourceMatchesCourse(rData, course)) count++;
+    });
+    return count;
+}
+
+/**
  * Build HTML markup for a single routine card.
  * @param {Object} data - routine document data
  * @param {Function} t - translator function (portalT)
  * @param {Function} esc - HTML escape function
+ * @param {Object} opts - optional { resourcesSnapshot }
  * @returns {string} HTML string
  */
-export function buildRoutineCardHTML(data, t, esc) {
+export function buildRoutineCardHTML(data, t, esc, opts = {}) {
     const genderBadge =
         data.gender === "Male"
             ? { label: t("genderMale"), cls: "bg-blue-100 text-blue-700" }
@@ -65,6 +86,13 @@ export function buildRoutineCardHTML(data, t, esc) {
         ? `<div class="text-[10px] text-emerald-600 font-semibold mb-1">📅 ${esc(data.routineDate)}</div>`
         : "";
 
+    // Resource count badge (only for daily routines with routineDate)
+    let resourceBadge = "";
+    if (data.routineDate && opts.resourcesSnapshot) {
+        const count = countResourcesForRoutine(data, opts.resourcesSnapshot);
+        resourceBadge = `<button type="button" data-open-daily-resources="${esc(data.routineDate)}" data-course-code="${esc(data.courseCode)}" data-course-title="${esc(data.subject || "")}" data-course-teacher="${esc(data.teacherCode || "")}" data-time-slot="${esc(data.timeSlot || "")}" data-routine-id="${esc(data.id || "")}" class="portal-btn inline-flex items-center gap-1 text-[10px] mt-1 px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-600 hover:text-white font-bold transition-colors">📎 ${t("dailyResourcesBadge")} (${count})</button>`;
+    }
+
     return (
         `<div class="p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm text-xs">` +
         `<div class="flex justify-between items-center mb-0.5">` +
@@ -73,6 +101,7 @@ export function buildRoutineCardHTML(data, t, esc) {
         `</div>` +
         `<div class="mb-1 text-[11px] text-amber-700 font-bold">Batch: ${esc(data.batchNumber)}</div>` +
         dateLabel +
+        resourceBadge +
         `<div class="grid grid-cols-2 text-[11px] text-gray-600 gap-y-0.5 border-t border-dashed pt-1 mt-1">` +
         `<p><b>Code:</b> ${esc(data.courseCode)}</p>` +
         `<p><b>Room:</b> ${esc(data.room)}</p>` +
@@ -93,6 +122,7 @@ export function buildRoutineCardHTML(data, t, esc) {
  * @param {Object} daysWithClasses - mutable tracker: { Saturday: bool, ... }
  * @param {Function} getPortalT - returns current translator function
  * @param {Function} esc - HTML escape function
+ * @param {Function} getResourcesSnapshot - returns current resourcesSnapshot array
  * @returns {Function} cleanup – call to unsubscribe both listeners
  */
 export function initRoutineAndNoticeListeners(
@@ -102,7 +132,8 @@ export function initRoutineAndNoticeListeners(
     noticeContainer,
     daysWithClasses,
     getPortalT,
-    esc
+    esc,
+    getResourcesSnapshot
 ) {
     const { db, collection, onSnapshot, query, orderBy } = firestore;
 
@@ -117,8 +148,12 @@ export function initRoutineAndNoticeListeners(
                 permanentByDay[day] = [];
             });
 
+            const resourcesSnapshot = typeof getResourcesSnapshot === "function"
+                ? getResourcesSnapshot()
+                : null;
+
             snapshot.forEach((docSnap) => {
-                const data = docSnap.data();
+                const data = { id: docSnap.id, ...docSnap.data() };
                 if (data.boardType === "daily") {
                     if (data.routineDate === todayBD) {
                         dailyRoutines.push(data);
@@ -135,7 +170,7 @@ export function initRoutineAndNoticeListeners(
 
             dailyRoutines.sort(compareRoutineByTime);
             dailyContainer.innerHTML = dailyRoutines.length
-                ? dailyRoutines.map((d) => buildRoutineCardHTML(d, t, esc)).join("")
+                ? dailyRoutines.map((d) => buildRoutineCardHTML(d, t, esc, { resourcesSnapshot })).join("")
                 : `<p class="text-xs text-gray-400 col-span-2 p-2">${t("noClasses")}</p>`;
 
             Object.keys(daysWithClasses).forEach((day) => {
@@ -144,7 +179,7 @@ export function initRoutineAndNoticeListeners(
                 const items = permanentByDay[day].sort(compareRoutineByTime);
                 if (items.length) {
                     el.innerHTML = items
-                        .map((d) => buildRoutineCardHTML(d, t, esc))
+                        .map((d) => buildRoutineCardHTML(d, t, esc, { resourcesSnapshot }))
                         .join("");
                     daysWithClasses[day] = true;
                 } else {
