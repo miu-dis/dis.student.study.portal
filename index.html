@@ -1444,34 +1444,22 @@
                 await updateFiltersAndListen();
                 _renderCourseGrid();
 
-                // ---- Attendance listener ----
+                // ---- Attendance listener (denormalized — no session enrichment needed) ----
                 renderLoadingState(document.getElementById("attendanceSummaryContainer"), window.portalT("loadingCourses"));
                 var attendanceUnsubscribe = onSnapshot(
                     query(collection(db, "attendance_records"), where("studentUID", "==", loggedInUserUID)),
-                    async function (recordsSnapshot) {
-                        var rawRecords = [];
-                        var sessionIds = new Set();
+                    function (recordsSnapshot) {
+                        var records = [];
                         recordsSnapshot.forEach(function (docSnap) {
                             var d = docSnap.data();
-                            rawRecords.push(d);
-                            if (d.sessionId) sessionIds.add(d.sessionId);
-                        });
-                        var sessionMap = new Map();
-                        var sessionPromises = [...sessionIds].map(async function (sid) {
-                            var snap = await getDoc(doc(db, "attendance_sessions", sid));
-                            if (snap.exists()) sessionMap.set(sid, snap.data());
-                        });
-                        await Promise.all(sessionPromises);
-                        var records = rawRecords.map(function (r) {
-                            var session = sessionMap.get(r.sessionId) || {};
-                            return {
-                                status: r.status,
-                                courseCode: r.courseCode || session.courseCode || "",
-                                courseTitle: r.courseTitle || session.courseTitle || "",
-                                date: r.date || session.date || "",
-                                sessionId: r.sessionId || "",
-                                markedAt: r.markedAt || "",
-                            };
+                            records.push({
+                                status: d.status,
+                                courseCode: d.courseCode || "",
+                                courseTitle: d.courseTitle || "",
+                                routineDate: d.routineDate || "",
+                                routineId: d.routineId || "",
+                                markedAt: d.markedAt || "",
+                            });
                         });
                         document.getElementById("attendanceSummaryContainer").innerHTML =
                             renderMyAttendanceSummary(records, window.portalT);

@@ -1,5 +1,5 @@
 // assets/js/admin/attendanceManager.js
-// Attendance session CRUD, student marking, and reports for admin dashboard
+// Routine-based attendance: today's daily routines → batch-filtered students → Yes/No toggle
 
 import { escapeHtml } from "../sanitize.js";
 import { ATTENDANCE_STATUS, STATUS_META } from "../portal/attendance.js";
@@ -7,172 +7,146 @@ import { ATTENDANCE_STATUS, STATUS_META } from "../portal/attendance.js";
 export { ATTENDANCE_STATUS, STATUS_META };
 
 /**
- * Build an attendance session creation form.
- * @param {object} opts
- * @param {Array<{ code: string, title: string }>} opts.courses - available courses from mappings
- * @param {string} [opts.today] - ISO date string for default date
- * @returns {string} HTML
+ * Get today's date in Bangladesh timezone (YYYY-MM-DD).
+ * @returns {string}
  */
-export function buildAttendanceForm(opts = {}) {
-    const courses = opts.courses || [];
-    const today = opts.today || new Date().toISOString().slice(0, 10);
-    const courseOptions = courses.map((c) =>
-        `<option value="${escapeHtml(c.code)}|${escapeHtml(c.title)}">${escapeHtml(c.code)} \u2014 ${escapeHtml(c.title)}</option>`
-    ).join("") || '<option value="">\u2014 No courses mapped \u2014</option>';
-
-    return /* html */`
-    <form id="attendanceSessionForm" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs" autocomplete="off">
-        <div class="sm:col-span-2">
-            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Course</label>
-            <select id="attCourse" required class="w-full p-2 border rounded bg-white font-bold text-gray-800">
-                <option value="">\u2014 Select course \u2014</option>
-                ${courseOptions}
-            </select>
-        </div>
-        <div>
-            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Date</label>
-            <input type="date" id="attDate" value="${today}" required
-                class="w-full p-2 border rounded text-gray-800">
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-            <div>
-                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Start</label>
-                <input type="time" id="attStartTime" required class="w-full p-2 border rounded text-gray-800">
-            </div>
-            <div>
-                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">End</label>
-                <input type="time" id="attEndTime" required class="w-full p-2 border rounded text-gray-800">
-            </div>
-        </div>
-        <button type="submit"
-            class="portal-btn sm:col-span-2 bg-emerald-700 text-white py-2.5 rounded-lg font-bold hover:bg-emerald-800 text-xs">
-            <i class="fa-solid fa-plus mr-1"></i> Create Attendance Session
-        </button>
-    </form>`;
+export function getBangladeshToday() {
+    const now = new Date();
+    const bd = new Date(now.getTime() + (6 * 60 * 60 * 1000));
+    const yyyy = bd.getUTCFullYear();
+    const mm = String(bd.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(bd.getUTCDate()).padStart(2, "0");
+    return yyyy + "-" + mm + "-" + dd;
 }
 
 /**
- * Render the list of attendance sessions with expand/collapse.
- * @param {import("firebase/firestore").QuerySnapshot} snapshot
- * @param {HTMLElement} containerEl
- * @param {object} [opts]
- * @param {function} [opts.onMarkAttendance] - called with (sessionId, sessionData)
- * @param {function} [opts.onDeleteSession] - called with (sessionId)
+ * Format a time string (HH:MM) to 12-hour display.
+ * @param {string} timeString
+ * @returns {string}
  */
-export function renderAttendanceSessionList(snapshot, containerEl, opts = {}) {
-    if (!snapshot || snapshot.empty) {
-        containerEl.innerHTML = '<p class="text-gray-400 text-xs text-center py-4">No attendance sessions created yet.</p>';
-        return;
+function formatTime12h(timeString) {
+    if (!timeString) return "";
+    const parts = timeString.split(":");
+    const h = parseInt(parts[0], 10);
+    const m = parts[1] || "00";
+    if (isNaN(h)) return timeString;
+    const ampm = h >= 12 ? "PM" : "AM";
+    const h12 = h % 12 || 12;
+    return h12 + ":" + m + " " + ampm;
+}
+
+/**
+ * Render today's daily routines as clickable attendance targets.
+ * Each routine card shows course info + batch + time, with a "Mark Attendance" button.
+ * @param {Array<{ id: string, data: object }>} todayRoutines
+ * @param {Map<string, number>} recordCounts - routineId → existing record count
+ * @param {string} [today] - ISO date string for display
+ * @returns {string} HTML
+ */
+export function buildTodayRoutineAttendanceList(todayRoutines, recordCounts, today, t) {
+    const tr = t || ((k) => k);
+    if (!todayRoutines || todayRoutines.length === 0) {
+        return '<p class="text-gray-400 text-xs text-center py-4">' + tr("noClassesToday") + '</p>';
     }
-    const sorted = [...snapshot.docs].sort((a, b) => {
-        const da = a.data().date || "";
-        const db = b.data().date || "";
-        return db.localeCompare(da); // newest first
-    });
-    containerEl.innerHTML = sorted.map((docSnap) => {
-        const d = docSnap.data();
-        const id = docSnap.id;
-        const dateLabel = d.date ? new Date(d.date + "T00:00:00").toLocaleDateString("en-US", {
-            weekday: "short", year: "numeric", month: "short", day: "numeric",
-        }) : "N/A";
-        return /* html */`
-        <div class="border border-gray-200 rounded-lg bg-white overflow-hidden session-card" data-session-id="${escapeHtml(id)}">
-            <div class="flex items-center justify-between p-3 bg-gray-50 cursor-pointer session-card__header"
-                role="button" tabindex="0" aria-expanded="false"
-                onclick="this.parentElement.classList.toggle('session-card--open'); this.setAttribute('aria-expanded', this.parentElement.classList.contains('session-card--open') ? 'true' : 'false')"
-                onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">
-                <div class="flex items-center gap-2 min-w-0">
-                    <span class="text-xs font-bold text-gray-700 truncate">${escapeHtml(d.courseCode || "")} \u2014 ${escapeHtml(d.courseTitle || "")}</span>
-                    <span class="text-[10px] text-gray-400 shrink-0">${dateLabel}</span>
-                    <span class="text-[10px] text-gray-400 shrink-0">${escapeHtml(d.startTime || "")}\u2013${escapeHtml(d.endTime || "")}</span>
+    const dateLabel = today
+        ? new Date(today + "T00:00:00").toLocaleDateString("en-US", {
+            weekday: "short",
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+        })
+        : today;
+
+    return todayRoutines
+        .map((r) => {
+            const d = r.data;
+            const id = r.id;
+            const count = recordCounts.get(id) || 0;
+            const timeStr = [d.startTime, d.endTime]
+                .filter(Boolean)
+                .map(formatTime12h)
+                .join("\u2013") || (d.timeSlot || "");
+            return /* html */ `
+        <div class="border border-gray-200 rounded-lg bg-white overflow-hidden routine-attendance-card" data-routine-id="${escapeHtml(id)}">
+            <div class="flex items-center justify-between p-3 bg-gray-50 gap-2 flex-wrap">
+                <div class="flex items-center gap-2 min-w-0 flex-wrap">
+                    <span class="text-xs font-bold text-gray-700 truncate">${escapeHtml(d.courseCode || "")} \u2014 ${escapeHtml(d.subject || d.courseTitle || "")}</span>
+                    ${timeStr ? `<span class="text-[10px] text-gray-400 shrink-0">${escapeHtml(timeStr)}</span>` : ""}
+                    ${d.batchNumber ? `<span class="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full font-bold shrink-0">${tr("batchLabel")} ${escapeHtml(d.batchNumber)}</span>` : ""}
                 </div>
-                <div class="flex items-center gap-1 shrink-0">
-                    <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full font-bold session-card__record-count"></span>
-                    <i class="fa-solid fa-chevron-down text-[10px] text-gray-400 transition-transform duration-200 session-card__chevron"></i>
-                </div>
-            </div>
-            <div class="session-card__body hidden p-3 border-t border-gray-100 bg-white">
-                <div class="flex items-center gap-2 mb-2 flex-wrap">
-                    <button type="button" data-action="mark" data-session-id="${escapeHtml(id)}"
-                        class="portal-btn text-[10px] font-bold px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">
-                        <i class="fa-solid fa-user-check mr-1"></i> Mark Attendance
-                    </button>
-                    <button type="button" data-action="delete" data-session-id="${escapeHtml(id)}"
-                        class="portal-btn text-[10px] font-bold px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 border border-red-200">
-                        <i class="fa-solid fa-trash mr-1"></i> Delete
+                <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full font-bold routine-card__record-count">${count} ${tr("markedCount")}</span>
+                    <button type="button" data-action="mark-routine" data-routine-id="${escapeHtml(id)}"
+                        class="portal-btn text-[10px] font-bold px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700">
+                        <i class="fa-solid fa-user-check mr-1"></i> ${tr("markAttendanceBtn")}
                     </button>
                 </div>
-                <div class="session-card__records text-xs text-gray-500">Loading records...</div>
             </div>
         </div>`;
-    }).join("");
-
-    // Attach event listeners for mark/delete buttons
-    containerEl.querySelectorAll("[data-action='mark']").forEach((btn) => {
-        btn.addEventListener("click", () => {
-            const sessionId = btn.dataset.sessionId;
-            const docSnap = snapshot.docs.find((d) => d.id === sessionId);
-            if (docSnap && opts.onMarkAttendance) {
-                opts.onMarkAttendance(sessionId, docSnap.data());
-            }
-        });
-    });
-    containerEl.querySelectorAll("[data-action='delete']").forEach((btn) => {
-        btn.addEventListener("click", () => {
-            const sessionId = btn.dataset.sessionId;
-            if (opts.onDeleteSession && confirm("Delete this attendance session and all its records?")) {
-                opts.onDeleteSession(sessionId);
-            }
-        });
-    });
+        })
+        .join("");
 }
 
 /**
- * Build the attendance marking UI for a given session.
- * @param {string} sessionId
- * @param {object} sessionData
- * @param {Array<{ uid: string, name: string, studentId: string }>} students
- * @param {Map<string, string>} existingRecords - studentUID -> status
+ * Build the attendance marking UI for a given daily routine.
+ * Batch-filtered students with Present/Absent radio toggle, default all present.
+ * @param {string} routineId
+ * @param {object} routineData - { courseCode, subject, routineDate, batchNumber }
+ * @param {Array<{ studentId: string, name: string }>} students
+ * @param {Map<string, string>} existingRecords - studentUID → status
  * @returns {string} HTML
  */
-export function buildAttendanceMarkingUI(sessionId, sessionData, students, existingRecords) {
+export function buildBatchAttendanceUI(routineId, routineData, students, existingRecords, t) {
+    const tr = t || ((k) => k);
     if (!students || students.length === 0) {
-        return '<p class="text-gray-400 text-xs text-center py-4">No students registered yet.</p>';
+        return '<p class="text-gray-400 text-xs text-center py-4">' + tr("noStudentsInBatch") + '</p>';
     }
-    const rows = students.map((s) => {
-        const currentStatus = existingRecords.get(s.studentId) || "present";
-        const statusRadios = ATTENDANCE_STATUS.map((status) => `
-            <label class="inline-flex items-center gap-1 cursor-pointer px-1.5 py-0.5 rounded-full text-[9px] font-bold transition-colors ${STATUS_META[status].color} ${currentStatus === status ? "ring-2 ring-offset-1 ring-emerald-500" : "opacity-60 hover:opacity-100"}">
-                <input type="radio" name="att_${escapeHtml(s.studentId)}" value="${status}" ${currentStatus === status ? "checked" : ""}
-                    class="sr-only" data-student="${escapeHtml(s.studentId)}" data-status="${status}">
-                ${STATUS_META[status].icon} ${STATUS_META[status].label}
-            </label>
-        `).join("");
-        return /* html */`
+    const rows = students
+        .map((s) => {
+            const currentStatus = existingRecords.get(s.studentId) || "present";
+            const presentChecked = currentStatus === "present" ? "checked" : "";
+            const absentChecked = currentStatus === "absent" ? "checked" : "";
+            return /* html */ `
         <tr class="border-b border-gray-100 hover:bg-gray-50">
             <td class="py-2 px-2 text-xs font-semibold text-gray-800">${escapeHtml(s.studentId)}</td>
             <td class="py-2 px-2 text-xs text-gray-700">${escapeHtml(s.name)}</td>
             <td class="py-2 px-2">
-                <div class="flex flex-wrap gap-1">${statusRadios}</div>
+                <div class="flex items-center gap-3">
+                    <label class="inline-flex items-center gap-1 cursor-pointer px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${presentChecked ? "bg-emerald-100 text-emerald-800 ring-2 ring-emerald-500" : "bg-gray-100 text-gray-500 hover:bg-emerald-50"}">
+                        <input type="radio" name="att_${escapeHtml(s.studentId)}" value="present" ${presentChecked}
+                            class="sr-only" data-student="${escapeHtml(s.studentId)}" data-status="present">
+                        <i class="fa-solid fa-check text-[9px]"></i> ${tr("statusPresent")}
+                    </label>
+                    <label class="inline-flex items-center gap-1 cursor-pointer px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${absentChecked ? "bg-red-100 text-red-800 ring-2 ring-red-500" : "bg-gray-100 text-gray-500 hover:bg-red-50"}">
+                        <input type="radio" name="att_${escapeHtml(s.studentId)}" value="absent" ${absentChecked}
+                            class="sr-only" data-student="${escapeHtml(s.studentId)}" data-status="absent">
+                        <i class="fa-solid fa-xmark text-[9px]"></i> ${tr("statusAbsent")}
+                    </label>
+                </div>
             </td>
         </tr>`;
-    }).join("");
+        })
+        .join("");
 
-    return /* html */`
-    <div class="attendance-marking" data-session-id="${escapeHtml(sessionId)}">
+    return /* html */ `
+    <div class="attendance-marking" data-routine-id="${escapeHtml(routineId)}">
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
             <div>
-                <p class="text-xs font-bold text-gray-800">${escapeHtml(sessionData.courseCode)} \u2014 ${escapeHtml(sessionData.courseTitle)}</p>
-                <p class="text-[10px] text-gray-400">${escapeHtml(sessionData.date || "")} \u2022 ${escapeHtml(sessionData.startTime || "")}\u2013${escapeHtml(sessionData.endTime || "")}</p>
+                <p class="text-xs font-bold text-gray-800">${escapeHtml(routineData.courseCode || "")} \u2014 ${escapeHtml(routineData.subject || routineData.courseTitle || "")}</p>
+                <p class="text-[10px] text-gray-400">${escapeHtml(routineData.routineDate || "")}${routineData.batchNumber ? " \u2022 Batch " + escapeHtml(routineData.batchNumber) : ""}</p>
             </div>
             <div class="flex items-center gap-2">
                 <button type="button" id="attMarkAllPresent"
                     class="portal-btn text-[10px] font-bold px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100">
-                    <i class="fa-solid fa-check-double mr-1"></i> All Present
+                    <i class="fa-solid fa-check-double mr-1"></i> ${tr("allPresent")}
+                </button>
+                <button type="button" id="attMarkAllAbsent"
+                    class="portal-btn text-[10px] font-bold px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 border border-red-200 hover:bg-red-100">
+                    <i class="fa-solid fa-xmark mr-1"></i> ${tr("allAbsent")}
                 </button>
                 <button type="button" id="attSaveAttendance"
-                    class="portal-btn text-[10px] font-bold px-3 py-1.5 rounded-lg bg-emerald-700 text-white hover:bg-emerald-800">
-                    <i class="fa-solid fa-floppy-disk mr-1"></i> Save Attendance
+                    class="portal-btn text-[10px] font-bold px-3 py-1.5 rounded-lg bg-rose-700 text-white hover:bg-rose-800">
+                    <i class="fa-solid fa-floppy-disk mr-1"></i> ${tr("saveAttendance")}
                 </button>
             </div>
         </div>
@@ -180,9 +154,9 @@ export function buildAttendanceMarkingUI(sessionId, sessionData, students, exist
             <table class="w-full text-left">
                 <thead class="bg-gray-50 border-b">
                     <tr>
-                        <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">Student ID</th>
-                        <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">Name</th>
-                        <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">Status</th>
+                        <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">${tr("studentIdCol")}</th>
+                        <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">${tr("nameCol")}</th>
+                        <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">${tr("statusCol")}</th>
                     </tr>
                 </thead>
                 <tbody>${rows}</tbody>
@@ -192,7 +166,7 @@ export function buildAttendanceMarkingUI(sessionId, sessionData, students, exist
 }
 
 /**
- * Collect attendance records from the marking UI.
+ * Collect attendance records from the marking UI (checked radio buttons).
  * @param {HTMLElement} containerEl - the attendance-marking container
  * @returns {Array<{ studentUID: string, status: string }>}
  */
@@ -209,52 +183,61 @@ export function collectAttendanceRecords(containerEl) {
 }
 
 /**
- * Render attendance records for a session (read-only view).
+ * Render attendance records for a routine (read-only summary view).
  * @param {Array<{ studentUID: string, studentName: string, status: string }>} records
  * @returns {string} HTML
  */
-export function renderAttendanceRecords(records) {
+export function renderAttendanceRecords(records, t) {
+    const tr = t || ((k) => k);
     if (!records || records.length === 0) {
-        return '<p class="text-gray-400 text-xs text-center py-2">No attendance records yet.</p>';
+        return '<p class="text-gray-400 text-xs text-center py-2">' + tr("noAttendanceRecords") + '</p>';
     }
     const presentCount = records.filter((r) => r.status === "present").length;
-    const total = records.length;
-    const pct = total > 0 ? Math.round((presentCount / total) * 100) : 0;
-    const summary = /* html */`
+    const absentCount = records.length - presentCount;
+    const pct = records.length > 0 ? Math.round((presentCount / records.length) * 100) : 0;
+    const summary = /* html */ `
     <div class="flex items-center gap-3 mb-3 text-xs flex-wrap">
-        <span class="font-bold text-gray-700">Summary:</span>
-        <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">${presentCount}/${total} present</span>
+        <span class="font-bold text-gray-700">${tr("attendanceSummaryLabel")}</span>
+        <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">${presentCount} ${tr("presentCount")}</span>
+        <span class="bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-bold">${absentCount} ${tr("absentCount")}</span>
         <span class="text-gray-400">(${pct}%)</span>
     </div>`;
 
-    const rows = records.map((r) => {
-        const meta = STATUS_META[r.status] || STATUS_META.absent;
-        return /* html */`
+    const rows = records
+        .map((r) => {
+            const meta = STATUS_META[r.status] || STATUS_META.absent;
+            const statusLabel = r.status === "present" ? tr("statusPresent") : tr("statusAbsent");
+            return /* html */ `
         <tr class="border-b border-gray-100">
             <td class="py-1.5 px-2 text-xs font-semibold text-gray-800">${escapeHtml(r.studentUID)}</td>
             <td class="py-1.5 px-2 text-xs text-gray-700">${escapeHtml(r.studentName)}</td>
             <td class="py-1.5 px-2">
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold ${meta.color}">
-                    ${meta.icon} ${meta.label}
+                    ${meta.icon} ${statusLabel}
                 </span>
             </td>
         </tr>`;
-    }).join("");
+        })
+        .join("");
 
-    return summary + /* html */`
+    return (
+        summary +
+        /* html */ `
     <div class="overflow-x-auto border rounded-lg">
         <table class="w-full text-left">
             <thead class="bg-gray-50 border-b">
                 <tr>
-                    <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">Student ID</th>
-                    <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">Name</th>
-                    <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">Status</th>
+                    <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">${tr("studentIdCol")}</th>
+                    <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">${tr("nameCol")}</th>
+                    <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">${tr("statusCol")}</th>
                 </tr>
             </thead>
             <tbody>${rows}</tbody>
         </table>
-    </div>`;
+    </div>`
+    );
 }
+
 
 /**
  * Compute attendance percentage for a set of records.
@@ -269,21 +252,24 @@ export function computeAttendanceStats(records) {
 }
 
 /**
- * Render attendance report summary across all sessions.
- * @param {Map<string, Array<{ status: string, courseCode: string, courseTitle: string }>>} perStudentRecords
+ * Render attendance report summary across all students.
+ * @param {Map<string, Array<{ status: string, studentName: string }>>} perStudentRecords
  * @returns {string} HTML
  */
-export function renderAttendanceReport(perStudentRecords) {
+export function renderAttendanceReport(perStudentRecords, t) {
+    const tr = t || ((k) => k);
     if (perStudentRecords.size === 0) {
-        return '<p class="text-gray-400 text-xs text-center py-4">No attendance data available.</p>';
+        return '<p class="text-gray-400 text-xs text-center py-4">' + tr("noAttendanceData") + '</p>';
     }
     const rows = [];
     perStudentRecords.forEach((records, studentUID) => {
         const stats = computeAttendanceStats(records);
-        const colorClass = stats.percent >= 75 ? "text-emerald-700" : stats.percent >= 50 ? "text-amber-700" : "text-red-700";
-        const bgClass = stats.percent >= 75 ? "bg-emerald-100" : stats.percent >= 50 ? "bg-amber-100" : "bg-red-100";
+        const colorClass =
+            stats.percent >= 75 ? "text-emerald-700" : stats.percent >= 50 ? "text-amber-700" : "text-red-700";
+        const bgClass =
+            stats.percent >= 75 ? "bg-emerald-100" : stats.percent >= 50 ? "bg-amber-100" : "bg-red-100";
         const studentName = records[0]?.studentName || studentUID;
-        rows.push(/* html */`
+        rows.push(/* html */ `
         <tr class="border-b border-gray-100 hover:bg-gray-50">
             <td class="py-2 px-2 text-xs font-semibold text-gray-800">${escapeHtml(studentUID)}</td>
             <td class="py-2 px-2 text-xs text-gray-700">${escapeHtml(studentName)}</td>
@@ -295,15 +281,15 @@ export function renderAttendanceReport(perStudentRecords) {
             </td>
         </tr>`);
     });
-    return /* html */`
+    return /* html */ `
     <div class="overflow-x-auto border rounded-lg">
         <table class="w-full text-left">
             <thead class="bg-gray-50 border-b">
                 <tr>
-                    <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">Student ID</th>
-                    <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">Name</th>
-                    <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">Attendance</th>
-                    <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">%</th>
+                    <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">${tr("studentIdCol")}</th>
+                    <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">${tr("nameCol")}</th>
+                    <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">${tr("attendanceCol")}</th>
+                    <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">${tr("percentCol")}</th>
                 </tr>
             </thead>
             <tbody>${rows.join("")}</tbody>
@@ -312,127 +298,83 @@ export function renderAttendanceReport(perStudentRecords) {
 }
 
 /**
- * Handle attendance session form submission.
- * @param {Event} e
- * @param {object} firestore
- * @param {*} firestore.db
- * @param {*} firestore.collection
- * @param {*} firestore.addDoc
- * @param {*} firestore.serverTimestamp
- * @param {string} adminUID
- * @param {string} adminName
- * @returns {Promise<void>}
- */
-export async function handleAttendanceSessionSubmit(e, firestore, adminUID, adminName) {
-    e.preventDefault();
-    const form = e.target;
-    const courseVal = form.querySelector("#attCourse").value;
-    if (!courseVal) {
-        alert("Please select a course.");
-        return;
-    }
-    const [courseCode, courseTitle] = courseVal.split("|");
-    const date = form.querySelector("#attDate").value;
-    const startTime = form.querySelector("#attStartTime").value;
-    const endTime = form.querySelector("#attEndTime").value;
-    if (!date || !startTime || !endTime) {
-        alert("Please fill all fields.");
-        return;
-    }
-    try {
-        await firestore.addDoc(firestore.collection(firestore.db, "attendance_sessions"), {
-            courseCode,
-            courseTitle,
-            date,
-            startTime,
-            endTime,
-            createdBy: adminUID,
-            createdByName: adminName,
-            createdAt: firestore.serverTimestamp ? firestore.serverTimestamp() : new Date().toISOString(),
-        });
-        form.reset();
-        // Re-set date to today
-        const dateEl = form.querySelector("#attDate");
-        if (dateEl) dateEl.value = new Date().toISOString().slice(0, 10);
-        alert("Attendance session created successfully!");
-    } catch (err) {
-        alert("Failed to create session: " + err.message);
-    }
-}
-
-/**
- * Save attendance records for a session.
- * @param {string} sessionId
+ * Save attendance records for a routine.
+ * Denormalized: stores routineId, routineDate, courseCode, courseTitle, batchNumber directly.
+ * Deletes previous records for the same routine before saving (allows re-marking).
+ * @param {string} routineId
+ * @param {object} routineData - { courseCode, subject, routineDate, batchNumber, startTime, endTime }
  * @param {Array<{ studentUID: string, status: string }>} records
- * @param {object} firestore
- * @param {*} firestore.db
- * @param {*} firestore.doc
- * @param {*} firestore.setDoc
- * @param {*} firestore.collection
- * @param {*} firestore.getDocs
- * @param {*} firestore.query
- * @param {*} firestore.where
+ * @param {object} firestore - { db, doc, setDoc, deleteDoc, collection, getDocs, query, where }
  * @param {string} adminUID
  * @returns {Promise<void>}
  */
-export async function saveAttendanceRecords(sessionId, records, firestore, adminUID) {
+export async function saveAttendanceRecords(routineId, routineData, records, firestore, adminUID) {
     if (!records || records.length === 0) {
         alert("No attendance records to save.");
         return;
     }
     try {
-        const { db, doc, setDoc, collection, getDocs, query, where } = firestore;
-        // Get student names from users collection
+        const { db, doc, setDoc, deleteDoc, collection, getDocs, query, where } = firestore;
+        // Get student names from users collection (batch in chunks of 30 for "in" query limit)
         const uids = records.map((r) => r.studentUID);
-        const userSnap = await getDocs(query(collection(db, "users"), where("uid", "in", uids)));
         const nameMap = new Map();
-        userSnap.forEach((d) => {
-            const data = d.data();
-            nameMap.set(data.uid || d.id, data.name || data.uid || d.id);
-        });
+        for (let i = 0; i < uids.length; i += 30) {
+            const chunk = uids.slice(i, i + 30);
+            const userSnap = await getDocs(query(collection(db, "users"), where("uid", "in", chunk)));
+            userSnap.forEach((d) => {
+                const data = d.data();
+                nameMap.set(data.uid || d.id, data.name || data.uid || d.id);
+            });
+        }
 
+        // Delete existing records for this routine (to allow re-marking)
+        const existingSnap = await getDocs(
+            query(collection(db, "attendance_records"), where("routineId", "==", routineId))
+        );
+        const deletePromises = existingSnap.docs.map((d) => deleteDoc(doc(db, "attendance_records", d.id)));
+        await Promise.all(deletePromises);
+
+        // Save new denormalized records
         const batch = [];
+        const now = new Date().toISOString();
         for (const record of records) {
             const ref = doc(collection(db, "attendance_records"));
-            batch.push(setDoc(ref, {
-                sessionId,
-                studentUID: record.studentUID,
-                studentName: nameMap.get(record.studentUID) || record.studentUID,
-                status: record.status,
-                markedAt: new Date().toISOString(),
-                markedBy: adminUID,
-            }));
+            batch.push(
+                setDoc(ref, {
+                    routineId,
+                    routineDate: routineData.routineDate || "",
+                    courseCode: routineData.courseCode || "",
+                    courseTitle: routineData.subject || routineData.courseTitle || "",
+                    batchNumber: routineData.batchNumber || "",
+                    studentUID: record.studentUID,
+                    studentName: nameMap.get(record.studentUID) || record.studentUID,
+                    status: record.status,
+                    markedAt: now,
+                    markedBy: adminUID,
+                })
+            );
         }
         await Promise.all(batch);
-        alert("Attendance saved successfully!");
     } catch (err) {
-        alert("Failed to save attendance: " + err.message);
+        throw err; // Let caller handle toast
     }
 }
 
 /**
- * Delete an attendance session and all its records.
- * @param {string} sessionId
- * @param {object} firestore
- * @param {*} firestore.db
- * @param {*} firestore.doc
- * @param {*} firestore.deleteDoc
- * @param {*} firestore.collection
- * @param {*} firestore.getDocs
- * @param {*} firestore.query
- * @param {*} firestore.where
+ * Delete all attendance records for a routine.
+ * @param {string} routineId
+ * @param {object} firestore - { db, doc, deleteDoc, collection, getDocs, query, where }
  * @returns {Promise<void>}
  */
-export async function deleteAttendanceSession(sessionId, firestore) {
+export async function deleteRoutineAttendanceRecords(routineId, firestore) {
     try {
         const { db, doc, deleteDoc, collection, getDocs, query, where } = firestore;
-        // Delete all records for this session
-        const recordsSnap = await getDocs(query(collection(db, "attendance_records"), where("sessionId", "==", sessionId)));
+        const recordsSnap = await getDocs(
+            query(collection(db, "attendance_records"), where("routineId", "==", routineId))
+        );
         const deletePromises = recordsSnap.docs.map((d) => deleteDoc(doc(db, "attendance_records", d.id)));
-        deletePromises.push(deleteDoc(doc(db, "attendance_sessions", sessionId)));
         await Promise.all(deletePromises);
-        alert("Session and all records deleted.");
     } catch (err) {
-        alert("Failed to delete session: " + err.message);
+        console.error("deleteRoutineAttendanceRecords:", err);
     }
 }

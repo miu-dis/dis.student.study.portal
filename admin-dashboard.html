@@ -281,31 +281,30 @@
         <!-- ─── Attendance System ─── -->
         <div class="portal-card bg-white p-6 rounded-xl shadow border-t-4 border-rose-600 mt-6" id="attendanceSection">
             <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center justify-between flex-wrap gap-2">
-                <span><i class="fa-solid fa-clipboard-user text-rose-600 mr-2"></i> Attendance Management</span>
+                <span><i class="fa-solid fa-clipboard-user text-rose-600 mr-2"></i><span id="attTitle">Attendance
+                        Management</span></span>
                 <span id="attendanceCount" class="text-xs bg-rose-100 text-rose-800 px-2 py-1 rounded-full font-bold">0
-                    sessions</span>
+                    <span id="attCountLabel">classes today</span></span>
             </h3>
-            <p class="text-[10px] text-gray-500 mb-3">Create attendance sessions, mark student attendance, and view
-                reports.</p>
-            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4" id="attendanceFormContainer">
-                <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Create Attendance Session</p>
-            </div>
+            <p id="attendanceDesc" class="text-[10px] text-gray-500 mb-3">Today's daily routines — click a class to mark
+                attendance by
+                batch.</p>
             <div class="mb-4">
-                <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Attendance Sessions</p>
-                <div id="attendanceSessionList" class="space-y-2 max-h-[24rem] overflow-y-auto pr-1">
+                <p id="todayClassesLabel" class="text-[10px] font-bold text-gray-500 uppercase mb-2">Today's Classes</p>
+                <div id="attendanceRoutineList" class="space-y-2 max-h-[24rem] overflow-y-auto pr-1">
                     <div class="ui-state ui-state--loading" role="status">
                         <div class="ui-state__spinner"></div>
-                        <p class="ui-state__message">Loading sessions...</p>
+                        <p id="attLoadingRoutines" class="ui-state__message">Loading routines...</p>
                     </div>
                 </div>
             </div>
             <div id="attendanceMarkingArea" class="border-t border-gray-200 pt-4 mt-4 hidden"></div>
             <div class="border-t border-gray-200 pt-4 mt-4">
-                <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Attendance Report</p>
+                <p id="attReportTitle" class="text-[10px] font-bold text-gray-500 uppercase mb-2">Attendance Report</p>
                 <div id="attendanceReportArea">
                     <div class="ui-state ui-state--loading" role="status">
                         <div class="ui-state__spinner"></div>
-                        <p class="ui-state__message">Loading report...</p>
+                        <p id="attLoadingReport" class="ui-state__message">Loading report...</p>
                     </div>
                 </div>
             </div>
@@ -355,6 +354,17 @@
         import { t } from "./assets/js/i18n.js";
 
         var adminT = function (key) { return t("admin", key); };
+
+        // Set static i18n text for attendance section (no language switcher on admin dashboard)
+        (function () {
+            document.getElementById("attTitle") && (document.getElementById("attTitle").innerText = adminT("attendanceTitle"));
+            document.getElementById("attendanceDesc") && (document.getElementById("attendanceDesc").innerText = adminT("attendanceDesc"));
+            document.getElementById("todayClassesLabel") && (document.getElementById("todayClassesLabel").innerText = adminT("todayClassesLabel"));
+            document.getElementById("attLoadingRoutines") && (document.getElementById("attLoadingRoutines").innerText = adminT("loadingRoutines"));
+            document.getElementById("attReportTitle") && (document.getElementById("attReportTitle").innerText = adminT("attendanceReport"));
+            document.getElementById("attLoadingReport") && (document.getElementById("attLoadingReport").innerText = adminT("loadingReport"));
+        })();
+
         import { onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { doc, getDoc, getDocs, setDoc, collection, addDoc, onSnapshot, query, orderBy, where, deleteDoc, updateDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import {
@@ -378,10 +388,9 @@
             buildResourceEditForm, initResourceEditPreview, saveResourceEdit,
         } from "./assets/js/admin/resourceManager.js";
         import {
-            buildAttendanceForm, renderAttendanceSessionList,
-            buildAttendanceMarkingUI, collectAttendanceRecords,
-            renderAttendanceRecords, computeAttendanceStats, renderAttendanceReport,
-            handleAttendanceSessionSubmit, saveAttendanceRecords, deleteAttendanceSession,
+            getBangladeshToday, buildTodayRoutineAttendanceList, buildBatchAttendanceUI,
+            collectAttendanceRecords, renderAttendanceRecords, computeAttendanceStats,
+            renderAttendanceReport, saveAttendanceRecords, deleteRoutineAttendanceRecords,
         } from "./assets/js/admin/attendanceManager.js";
         import { renderAdminForumPanel } from "./assets/js/admin/forumManager.js";
         fillSessionTermSelect(document.getElementById("mapTerm"));
@@ -401,8 +410,7 @@
         let _mappingSelectWired = false;
 
         // ─── Attendance state ───
-        let attendanceCourses = [];
-        let cachedAttendanceSessions = null;
+        let cachedTodayRoutines = [];
         let cachedAttendanceRecords = [];
         let _currentAdminUID = null;
         let _currentAdminName = "";
@@ -592,125 +600,56 @@
             syncExistingRoutines(db, collection, query, where, getDocs, setDoc, doc, showToast, adminT);
         });
 
-        // Extract courses for attendance form from mappings
-        function extractAttendanceCourses() {
-            const seen = new Set();
-            const courses = [];
-            Object.values(cachedMappingGroups).forEach((entries) => {
-                entries.forEach((entry) => {
-                    const { course } = entry;
-                    if (course && course.code && !seen.has(course.code)) {
-                        seen.add(course.code);
-                        courses.push({ code: course.code, title: course.title || course.code });
-                    }
-                });
-            });
-            return courses.sort((a, b) => a.code.localeCompare(b.code));
-        }
-
-        // ─── Attendance: Sessions real-time listener ───
-        const attSessionListEl = document.getElementById("attendanceSessionList");
+        // ─── Attendance: Today's daily routines real-time listener ───
+        const attRoutineListEl = document.getElementById("attendanceRoutineList");
         const attCountEl = document.getElementById("attendanceCount");
-        const attFormContainer = document.getElementById("attendanceFormContainer");
         const attMarkingArea = document.getElementById("attendanceMarkingArea");
         const attReportArea = document.getElementById("attendanceReportArea");
 
-        onSnapshot(query(collection(db, "attendance_sessions"), orderBy("createdAt", "desc")), (snapshot) => {
-            cachedAttendanceSessions = snapshot;
-            attCountEl.innerText = `${snapshot.size} session${snapshot.size !== 1 ? "s" : ""}`;
-            if (snapshot.empty) {
-                renderEmptyState(attSessionListEl, adminT("noAttendanceSessions"));
+        onSnapshot(query(collection(db, "routines"), where("boardType", "==", "daily")), (snapshot) => {
+            const today = getBangladeshToday();
+            const todayRoutines = [];
+            snapshot.forEach((docSnap) => {
+                const d = docSnap.data();
+                if (d.routineDate === today) {
+                    todayRoutines.push({ id: docSnap.id, data: d });
+                }
+            });
+            // Sort by startTime
+            todayRoutines.sort((a, b) => (a.data.startTime || "").localeCompare(b.data.startTime || ""));
+            cachedTodayRoutines = todayRoutines;
+            attCountEl.innerText = `${todayRoutines.length} ${adminT("classesToday")}`;
+
+            if (todayRoutines.length === 0) {
+                attRoutineListEl.innerHTML = '<p class="text-gray-400 text-xs text-center py-4">' + adminT("noClassesToday") + '</p>';
+                // Still update record counts on the empty set
+                updateRoutineRecordCounts();
                 return;
             }
-            renderAttendanceSessionList(snapshot, attSessionListEl, {
-                onMarkAttendance: async (sessionId, sessionData) => {
-                    try {
-                        // Load students (role=student only) and existing records for this session
-                        const userSnap = await getDocs(query(collection(db, "users"), where("role", "==", "student")));
-                        const students = [];
-                        userSnap.forEach((d) => {
-                            const data = d.data();
-                            if (data.role !== "admin") {
-                                students.push({
-                                    uid: d.id,
-                                    studentId: data.uid || d.id,
-                                    name: data.name || data.uid || d.id,
-                                });
-                            }
-                        });
-                        const existingRecords = new Map();
-                        cachedAttendanceRecords
-                            .filter((r) => r.sessionId === sessionId)
-                            .forEach((r) => existingRecords.set(r.studentUID, r.status));
-                        attMarkingArea.innerHTML = buildAttendanceMarkingUI(sessionId, sessionData, students, existingRecords);
-                        attMarkingArea.classList.remove("hidden");
 
-                        // Wire "All Present" button
-                        const allPresentBtn = attMarkingArea.querySelector("#attMarkAllPresent");
-                        if (allPresentBtn) {
-                            allPresentBtn.addEventListener("click", () => {
-                                attMarkingArea.querySelectorAll("input[type='radio'][data-status='present']").forEach((r) => {
-                                    r.checked = true;
-                                });
-                            });
-                        }
-                        // Wire "Save Attendance" button
-                        const saveBtn = attMarkingArea.querySelector("#attSaveAttendance");
-                        if (saveBtn) {
-                            saveBtn.addEventListener("click", async () => {
-                                try {
-                                    const records = collectAttendanceRecords(attMarkingArea);
-                                    await saveAttendanceRecords(sessionId, records, { db, doc, setDoc, collection, getDocs, query, where }, _currentAdminUID);
-                                    attMarkingArea.classList.add("hidden");
-                                    attMarkingArea.innerHTML = "";
-                                } catch (err) {
-                                    console.error("Save attendance error:", err);
-                                    showToast(adminT("alertActionFailed"), "error");
-                                }
-                            });
-                        }
-                    } catch (err) {
-                        console.error("Mark attendance error:", err);
-                        showToast(adminT("alertActionFailed"), "error");
-                    }
-                },
-                onDeleteSession: async (sessionId) => {
-                    try {
-                        await deleteAttendanceSession(sessionId, { db, doc, deleteDoc, collection, getDocs, query, where });
-                    } catch (err) {
-                        console.error("Delete session error:", err);
-                        showToast(adminT("alertActionFailed"), "error");
-                    }
-                },
-            });
+            // Build initial list with zero counts, then fill in as records load
+            const recordCounts = new Map();
+            todayRoutines.forEach((r) => recordCounts.set(r.id, 0));
+            attRoutineListEl.innerHTML = buildTodayRoutineAttendanceList(todayRoutines, recordCounts, today, adminT);
 
-            // Refresh session record counts & embedded records
-            refreshSessionRecordCounts();
-
-            // Rebuild attendance form with latest courses
-            attendanceCourses = extractAttendanceCourses();
-            attFormContainer.innerHTML = buildAttendanceForm({ courses: attendanceCourses });
-            wireAttendanceForm();
+            // Update routine record counts from cached records
+            updateRoutineRecordCounts();
         });
 
-        function refreshSessionRecordCounts() {
-            if (!cachedAttendanceSessions) return;
-            cachedAttendanceSessions.docs.forEach((docSnap) => {
-                const sessionId = docSnap.id;
-                const card = attSessionListEl.querySelector(`[data-session-id="${sessionId}"]`);
+        function updateRoutineRecordCounts() {
+            if (!cachedTodayRoutines) return;
+            const counts = new Map();
+            cachedTodayRoutines.forEach((r) => {
+                const count = cachedAttendanceRecords.filter((rec) => rec.routineId === r.id).length;
+                counts.set(r.id, count);
+            });
+            // Update count badges in the DOM
+            cachedTodayRoutines.forEach((r) => {
+                const card = attRoutineListEl.querySelector(`[data-routine-id="${r.id}"]`);
                 if (!card) return;
-                const countEl = card.querySelector(".session-card__record-count");
-                const recordsEl = card.querySelector(".session-card__records");
-                const records = cachedAttendanceRecords.filter((r) => r.sessionId === sessionId);
+                const countEl = card.querySelector(".routine-card__record-count");
                 if (countEl) {
-                    countEl.innerText = `${records.length} marked`;
-                }
-                if (recordsEl) {
-                    recordsEl.innerHTML = renderAttendanceRecords(records.map((r) => ({
-                        studentUID: r.studentUID,
-                        studentName: r.studentName,
-                        status: r.status,
-                    })));
+                    countEl.innerText = `${counts.get(r.id) || 0} ${adminT("markedCount")}`;
                 }
             });
         }
@@ -721,7 +660,7 @@
             snapshot.forEach((d) => {
                 cachedAttendanceRecords.push({ id: d.id, ...d.data() });
             });
-            refreshSessionRecordCounts();
+            updateRoutineRecordCounts();
             refreshAttendanceReport();
         });
 
@@ -743,17 +682,131 @@
                 renderEmptyState(attReportArea, adminT("noAttendanceRecords"));
                 return;
             }
-            attReportArea.innerHTML = renderAttendanceReport(perStudent);
+            attReportArea.innerHTML = renderAttendanceReport(perStudent, adminT);
         }
 
-        // ─── Attendance form wire-up ───
-        function wireAttendanceForm() {
-            const form = document.getElementById("attendanceSessionForm");
-            if (!form) return;
-            form.addEventListener("submit", (e) =>
-                handleAttendanceSessionSubmit(e, { db, collection, addDoc, serverTimestamp }, _currentAdminUID, _currentAdminName)
-            );
-        }
+        // ─── "Mark Attendance" button click delegation ───
+        attRoutineListEl.addEventListener("click", async (e) => {
+            const btn = e.target.closest("[data-action='mark-routine']");
+            if (!btn) return;
+            const routineId = btn.dataset.routineId;
+            const routine = cachedTodayRoutines.find((r) => r.id === routineId);
+            if (!routine) return;
+            const routineData = routine.data;
+
+            try {
+                // Load students filtered by this routine's batchNumber
+                const userSnap = await getDocs(
+                    query(collection(db, "users"), where("role", "==", "student"), where("batchNumber", "==", routineData.batchNumber || ""))
+                );
+                const students = [];
+                userSnap.forEach((d) => {
+                    const data = d.data();
+                    students.push({
+                        studentId: data.uid || d.id,
+                        name: data.name || data.uid || d.id,
+                    });
+                });
+
+                // Existing records for this routine
+                const existingRecords = new Map();
+                cachedAttendanceRecords
+                    .filter((r) => r.routineId === routineId)
+                    .forEach((r) => existingRecords.set(r.studentUID, r.status));
+
+                attMarkingArea.innerHTML = buildBatchAttendanceUI(routineId, routineData, students, existingRecords, adminT);
+                attMarkingArea.classList.remove("hidden");
+                attMarkingArea.scrollIntoView({ behavior: "smooth", block: "center" });
+
+                // Wire "All Present" button
+                const allPresentBtn = attMarkingArea.querySelector("#attMarkAllPresent");
+                if (allPresentBtn) {
+                    allPresentBtn.addEventListener("click", () => {
+                        attMarkingArea.querySelectorAll("input[type='radio'][data-status='present']").forEach((r) => {
+                            r.checked = true;
+                        });
+                        // Update label styles
+                        attMarkingArea.querySelectorAll("input[type='radio']").forEach((r) => {
+                            const label = r.closest("label");
+                            if (!label) return;
+                            label.classList.remove("bg-emerald-100", "text-emerald-800", "ring-2", "ring-emerald-500",
+                                "bg-red-100", "text-red-800", "ring-red-500", "bg-gray-100", "text-gray-500");
+                            if (r.dataset.status === "present" && r.checked) {
+                                label.classList.add("bg-emerald-100", "text-emerald-800", "ring-2", "ring-emerald-500");
+                            } else if (r.dataset.status === "absent" && r.checked) {
+                                label.classList.add("bg-red-100", "text-red-800", "ring-2", "ring-red-500");
+                            } else {
+                                label.classList.add("bg-gray-100", "text-gray-500");
+                            }
+                        });
+                    });
+                }
+
+                // Wire "All Absent" button
+                const allAbsentBtn = attMarkingArea.querySelector("#attMarkAllAbsent");
+                if (allAbsentBtn) {
+                    allAbsentBtn.addEventListener("click", () => {
+                        attMarkingArea.querySelectorAll("input[type='radio'][data-status='absent']").forEach((r) => {
+                            r.checked = true;
+                        });
+                        attMarkingArea.querySelectorAll("input[type='radio']").forEach((r) => {
+                            const label = r.closest("label");
+                            if (!label) return;
+                            label.classList.remove("bg-emerald-100", "text-emerald-800", "ring-2", "ring-emerald-500",
+                                "bg-red-100", "text-red-800", "ring-red-500", "bg-gray-100", "text-gray-500");
+                            if (r.dataset.status === "present" && r.checked) {
+                                label.classList.add("bg-emerald-100", "text-emerald-800", "ring-2", "ring-emerald-500");
+                            } else if (r.dataset.status === "absent" && r.checked) {
+                                label.classList.add("bg-red-100", "text-red-800", "ring-2", "ring-red-500");
+                            } else {
+                                label.classList.add("bg-gray-100", "text-gray-500");
+                            }
+                        });
+                    });
+                }
+
+                // Wire individual radio clicks for visual style updates
+                attMarkingArea.querySelectorAll("input[type='radio']").forEach((radio) => {
+                    radio.addEventListener("change", () => {
+                        attMarkingArea.querySelectorAll(`input[name="${radio.name}"]`).forEach((r) => {
+                            const label = r.closest("label");
+                            if (!label) return;
+                            label.classList.remove("bg-emerald-100", "text-emerald-800", "ring-2", "ring-emerald-500",
+                                "bg-red-100", "text-red-800", "ring-red-500", "bg-gray-100", "text-gray-500");
+                            if (r.dataset.status === "present" && r.checked) {
+                                label.classList.add("bg-emerald-100", "text-emerald-800", "ring-2", "ring-emerald-500");
+                            } else if (r.dataset.status === "absent" && r.checked) {
+                                label.classList.add("bg-red-100", "text-red-800", "ring-2", "ring-red-500");
+                            } else {
+                                label.classList.add("bg-gray-100", "text-gray-500");
+                            }
+                        });
+                    });
+                });
+
+                // Wire "Save Attendance" button
+                const saveBtn = attMarkingArea.querySelector("#attSaveAttendance");
+                if (saveBtn) {
+                    saveBtn.addEventListener("click", async () => {
+                        try {
+                            const records = collectAttendanceRecords(attMarkingArea);
+                            await saveAttendanceRecords(routineId, routineData, records,
+                                { db, doc, setDoc, collection, getDocs, query, where, deleteDoc },
+                                _currentAdminUID);
+                            attMarkingArea.classList.add("hidden");
+                            attMarkingArea.innerHTML = "";
+                            showToast(adminT("attendanceSaved"), "success");
+                        } catch (err) {
+                            console.error("Save attendance error:", err);
+                            showToast(adminT("alertActionFailed"), "error");
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Mark attendance error:", err);
+                showToast(adminT("alertActionFailed"), "error");
+            }
+        });
 
 
         // ─── Resources real-time listener ───

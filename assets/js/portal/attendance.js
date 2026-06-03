@@ -4,15 +4,24 @@
 import { escapeHtml } from "../sanitize.js";
 
 /** @type {string[]} */
-export const ATTENDANCE_STATUS = ["present", "absent", "late", "excused"];
+export const ATTENDANCE_STATUS = ["present", "absent"];
 
 /** @type {Record<string, { icon: string, label: string, color: string }>} */
 export const STATUS_META = {
     present: { icon: "\u2705", label: "Present", color: "bg-emerald-100 text-emerald-800" },
     absent: { icon: "\u274C", label: "Absent", color: "bg-red-100 text-red-800" },
-    late: { icon: "\u23F0", label: "Late", color: "bg-amber-100 text-amber-800" },
-    excused: { icon: "\u2709\uFE0F", label: "Excused", color: "bg-blue-100 text-blue-800" },
 };
+
+/**
+ * Get a translated status label.
+ * @param {string} status - "present" or "absent"
+ * @param {Function} [t] - translator function, defaults to identity
+ * @returns {string}
+ */
+export function getStatusLabel(status, t) {
+    const tr = t || ((k) => k);
+    return status === "present" ? tr("statusPresent") || "Present" : tr("statusAbsent") || "Absent";
+}
 
 /**
  * Compute attendance statistics from a set of records.
@@ -28,7 +37,7 @@ export function computeAttendanceStats(records) {
 
 /**
  * Render the "My Attendance" summary card for the student home page.
- * @param {Array<{ status: string, courseCode: string, courseTitle: string, sessionId: string }>} records
+ * @param {Array<{ status: string, courseCode: string, courseTitle: string, routineId: string }>} records
  * @param {Function} [t] - translator function, defaults to identity
  * @returns {string} HTML
  */
@@ -97,7 +106,7 @@ export function renderMyAttendanceSummary(records, t) {
 
 /**
  * Render attendance history table for the student.
- * @param {Array<{ status: string, courseCode: string, courseTitle: string, date: string, markedAt: string }>} records
+ * @param {Array<{ status: string, courseCode: string, courseTitle: string, routineDate: string, markedAt: string }>} records
  * @param {Function} [t] - translator function
  * @returns {string} HTML
  */
@@ -106,11 +115,11 @@ export function renderAttendanceHistory(records, t) {
     if (!records || records.length === 0) {
         return '<p class="text-xs text-gray-400 text-center py-4">' + (tr("noAttendanceYet") || "No attendance records yet.") + '</p>';
     }
-    // Sort by date descending
-    const sorted = [...records].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    // Sort by date descending (using routineDate field)
+    const sorted = [...records].sort((a, b) => (b.routineDate || "").localeCompare(a.routineDate || ""));
     const rows = sorted.map((r) => {
         const meta = STATUS_META[r.status] || STATUS_META.absent;
-        const dateLabel = r.date ? new Date(r.date + "T00:00:00").toLocaleDateString("en-US", {
+        const dateLabel = r.routineDate ? new Date(r.routineDate + "T00:00:00").toLocaleDateString("en-US", {
             weekday: "short", year: "numeric", month: "short", day: "numeric",
         }) : "N/A";
         return /* html */`
@@ -120,7 +129,7 @@ export function renderAttendanceHistory(records, t) {
             <td class="py-2 px-2 text-xs text-gray-700 truncate max-w-[120px]">${escapeHtml(r.courseTitle || "")}</td>
             <td class="py-2 px-2">
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold ${meta.color}">
-                    ${meta.icon} ${meta.label}
+                    ${meta.icon} ${getStatusLabel(r.status, tr)}
                 </span>
             </td>
         </tr>`;
@@ -142,7 +151,8 @@ export function renderAttendanceHistory(records, t) {
 }
 
 /**
- * Query attendance records for a specific student, enriched with session data.
+ * Query attendance records for a specific student.
+ * Records are already denormalized with course info — no session enrichment needed.
  * @param {object} firestore
  * @param {*} firestore.db
  * @param {*} firestore.collection
@@ -150,50 +160,30 @@ export function renderAttendanceHistory(records, t) {
  * @param {*} firestore.query
  * @param {*} firestore.where
  * @param {string} studentUID
- * @returns {Promise<Array<{ status: string, courseCode: string, courseTitle: string, date: string, sessionId: string, markedAt: string }>>}
+ * @returns {Promise<Array<{ status: string, courseCode: string, courseTitle: string, routineDate: string, routineId: string, markedAt: string }>>}
  */
 export async function fetchMyAttendanceRecords(firestore, studentUID) {
     const { db, collection, getDocs, query, where } = firestore;
     try {
-        // Get all records for this student
         const recordsSnap = await getDocs(
             query(collection(db, "attendance_records"), where("studentUID", "==", studentUID))
         );
         if (recordsSnap.empty) return [];
 
-        // Collect session IDs
-        const sessionIds = new Set();
+        // Records are denormalized — courseCode, courseTitle, routineDate are directly on the doc
         const records = [];
         recordsSnap.forEach((docSnap) => {
             const d = docSnap.data();
-            records.push(d);
-            if (d.sessionId) sessionIds.add(d.sessionId);
+            records.push({
+                status: d.status,
+                courseCode: d.courseCode || "",
+                courseTitle: d.courseTitle || "",
+                routineDate: d.routineDate || "",
+                routineId: d.routineId || "",
+                markedAt: d.markedAt || "",
+            });
         });
-
-        // Fetch session data for dates and course info
-        const sessionMap = new Map();
-        const sessionPromises = [...sessionIds].map(async (sid) => {
-            const { doc: docFn, getDoc } = firestore;
-            const snap = await getDoc(docFn(db, "attendance_sessions", sid));
-            if (snap.exists()) {
-                sessionMap.set(sid, snap.data());
-            }
-        });
-        await Promise.all(sessionPromises);
-
-        // Enrich records with session data
-        return records.map((r) => {
-            const session = sessionMap.get(r.sessionId) || {};
-            return {
-                status: r.status,
-                courseCode: r.courseCode || session.courseCode || "",
-                courseTitle: r.courseTitle || session.courseTitle || "",
-                date: r.date || session.date || "",
-                sessionId: r.sessionId || "",
-                markedAt: r.markedAt || "",
-                studentName: r.studentName || "",
-            };
-        });
+        return records;
     } catch (err) {
         console.error("fetchMyAttendanceRecords:", err);
         return [];
