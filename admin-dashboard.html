@@ -216,8 +216,13 @@
                 <span id="ledgerCount" class="text-[10px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full">0
                     entries</span>
             </h3>
-            <p class="text-[10px] text-gray-400 mb-2">ডেইলি রুটিন তৈরি করলে অটোমেটিক সিঙ্ক হবে। ✅ / ❌ টগল করে কনফার্ম
-                করুন ক্লাস হয়েছে কিনা।</p>
+            <p class="text-[10px] text-gray-400 mb-2"><span id="ledgerDescText">ডেইলি রুটিন তৈরি করলে অটোমেটিক সিঙ্ক
+                    হবে। ✅ / ❌ টগল করে কনফার্ম
+                    করুন ক্লাস হয়েছে কিনা।</span>
+                <button type="button" id="ledgerSyncBtn"
+                    class="text-[10px] bg-amber-500 text-white px-3 py-1 rounded-full font-semibold hover:bg-amber-600 transition ml-1">Sync
+                    Existing Routines</button>
+            </p>
             <div id="adminLedgerList" class="space-y-2 max-h-[20rem] overflow-y-auto text-xs pr-1">
                 <div class="ui-state ui-state--loading" role="status">
                     <div class="ui-state__spinner"></div>
@@ -367,7 +372,7 @@
             initNoticeEditToolbar, saveNoticeEdit, renderNoticeList,
         } from "./assets/js/admin/noticeManager.js";
         import { renderStudentTable } from "./assets/js/admin/studentManager.js";
-        import { renderLedgerTable } from "./assets/js/admin/routineLedgerManager.js";
+        import { renderLedgerTable, syncExistingRoutines } from "./assets/js/admin/routineLedgerManager.js";
         import {
             renderAdminResourceList, handleAdminResourceClick,
             buildResourceEditForm, initResourceEditPreview, saveResourceEdit,
@@ -482,6 +487,7 @@
                         }, { merge: true });
                     } catch (err) {
                         console.error("Failed to sync ledger:", err);
+                        showToast(adminT("ledgerSyncFailed") + ": " + (err.message || "Permission denied. Please deploy latest firestore.rules to Firebase Console."), "error");
                     }
                 }
             }
@@ -579,6 +585,11 @@
                 _currentAdminName,
                 showToast, adminT
             );
+        });
+
+        // ─── Sync Existing Routines button ───
+        document.getElementById("ledgerSyncBtn").addEventListener("click", function () {
+            syncExistingRoutines(db, collection, query, where, getDocs, setDoc, doc, showToast, adminT);
         });
 
         // Extract courses for attendance form from mappings

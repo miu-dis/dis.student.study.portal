@@ -330,6 +330,11 @@ const TRANSLATIONS = {
             ledgerAllConfirmed: "All entries already confirmed.",
             ledgerConfirmedCount: "entries confirmed.",
             ledgerUnconfirmedCount: "entries pending confirmation.",
+            ledgerSyncBtn: "Sync Existing Routines",
+            ledgerSyncing: "Syncing...",
+            ledgerSyncDone: "daily routines synced to ledger.",
+            ledgerSyncNone: "No existing daily routines found to sync.",
+            ledgerSyncFailed: "Sync failed",
         },
         bn: {
             logoutConfirm: "লগআউট করবেন?", unsavedChanges: "আপনার পরিবর্তন সেভ হয়নি। বাতিল করবেন?",
@@ -393,6 +398,11 @@ const TRANSLATIONS = {
             ledgerAllConfirmed: "সকল এন্ট্রি ইতিমধ্যে নিশ্চিত।",
             ledgerConfirmedCount: "টি এন্ট্রি নিশ্চিত হয়েছে।",
             ledgerUnconfirmedCount: "টি এন্ট্রি নিশ্চিতকরণ বাকি।",
+            ledgerSyncBtn: "পূর্বের রুটিন সিঙ্ক করুন",
+            ledgerSyncing: "সিঙ্ক হচ্ছে...",
+            ledgerSyncDone: "টি ডেইলি রুটিন লেজারে সিঙ্ক হয়েছে।",
+            ledgerSyncNone: "কোনো পূর্বের ডেইলি রুটিন পাওয়া যায়নি।",
+            ledgerSyncFailed: "সিঙ্ক ব্যর্থ",
             // Forum moderation
             forumTitle: "আলোচনা ফোরাম মডারেশন",
             noForumThreads: "কোনো আলোচনা থ্রেড পাওয়া যায়নি।",

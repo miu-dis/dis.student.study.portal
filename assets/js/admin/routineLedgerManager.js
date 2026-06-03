@@ -190,3 +190,60 @@ export async function confirmAllVisible(entries, db, docFn, updateDocFn, adminNa
     if (btn) btn.disabled = false;
     showToast(succeeded + "/" + unconfirmed.length + " " + t("ledgerConfirmedCount"), succeeded > 0 ? "success" : "error");
 }
+
+/**
+ * One-time sync: pull all existing daily routines into the ledger.
+ * Safe to run multiple times — uses merge:true so existing entries aren't overwritten.
+ * @param {Object} db - Firestore db instance
+ * @param {Function} collectionFn - Firestore collection()
+ * @param {Function} queryFn - Firestore query()
+ * @param {Function} whereFn - Firestore where()
+ * @param {Function} getDocsFn - Firestore getDocs()
+ * @param {Function} setDocFn - Firestore setDoc()
+ * @param {Function} docFn - Firestore doc()
+ * @param {Function} showToast - Toast notification function
+ * @param {Function} t - i18n translator for admin namespace
+ * @returns {Promise<number>} count of synced entries
+ */
+export async function syncExistingRoutines(db, collectionFn, queryFn, whereFn, getDocsFn, setDocFn, docFn, showToast, t) {
+    var btn = document.getElementById("ledgerSyncBtn");
+    if (btn) { btn.disabled = true; btn.innerText = t("ledgerSyncing"); }
+
+    try {
+        var q = queryFn(collectionFn(db, "routines"), whereFn("boardType", "==", "daily"));
+        var snapshot = await getDocsFn(q);
+
+        if (snapshot.empty) {
+            showToast(t("ledgerSyncNone"), "info");
+            return 0;
+        }
+
+        var synced = 0;
+        snapshot.forEach(function (docSnap) {
+            var data = docSnap.data();
+            if (!data.routineDate || !data.courseCode) return;
+            var ledgerId = String(data.courseCode).trim().toUpperCase() + "_" + data.routineDate;
+            setDocFn(docFn(db, "routine_date_ledger", ledgerId), {
+                courseCode: data.courseCode,
+                subject: data.subject || "",
+                routineDate: data.routineDate,
+                batchNumber: data.batchNumber || "",
+                teacherCode: data.teacherCode || "",
+                classHeld: false,
+                confirmedAt: null,
+                confirmedBy: null,
+                createdAt: new Date().toISOString(),
+            }, { merge: true });
+            synced++;
+        });
+
+        showToast(synced + " " + t("ledgerSyncDone"), "success");
+        return synced;
+    } catch (err) {
+        console.error("Ledger sync failed:", err);
+        showToast(t("ledgerSyncFailed") + ": " + err.message, "error");
+        return 0;
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerText = t("ledgerSyncBtn"); }
+    }
+}
