@@ -139,9 +139,12 @@ export function initRoutineAndNoticeListeners(
                 permanentByDay[day] = [];
             });
 
+            // Store all daily routines globally for course date filters
+            window._allDailyRoutines = [];
             snapshot.forEach((docSnap) => {
                 const data = { id: docSnap.id, ...docSnap.data() };
                 if (data.boardType === "daily") {
+                    window._allDailyRoutines.push(data);
                     if (data.routineDate === todayBD) {
                         dailyRoutines.push(data);
                     }

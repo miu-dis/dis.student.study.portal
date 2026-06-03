@@ -136,29 +136,40 @@ export function countResourcesForCourse(course, resourcesSnapshot) {
     });
     return count;
 }
-
 /**
- * Get all resource docs matching a specific course.
- * @param {Object} course
- * @param {Array} resourcesSnapshot
- * @returns {Array<Object>}
- */
-/**
- * Extract unique routine dates for a course from the resources snapshot.
+ * Get all dates where this course has ever had a daily routine slot.
+ * Primary source: daily routines (from routines collection, stored on window._allDailyRoutines).
+ * Also merges in dates from existing resources that have a routineDate, so previously
+ * uploaded resources for past dates are still visible in the filter.
  * @param {Object} course - { code, title, teacher }
- * @param {Array} resourcesSnapshot - array of resource docs
+ * @param {Array} resourcesSnapshot - Firestore snapshot of resources
  * @returns {string[]} sorted unique YYYY-MM-DD dates, newest first
  */
 export function getAvailableDatesForCourse(course, resourcesSnapshot) {
-    if (!resourcesSnapshot || !course || !course.code) return [];
+    if (!course || !course.code) return [];
     const dates = new Set();
-    resourcesSnapshot.forEach((resDoc) => {
-        const rData = resDoc.data ? { id: resDoc.id, ...resDoc.data() } : resDoc;
-        if (!rData.routineDate) return;
-        if (resourceMatchesCourse(rData, course)) {
+
+    // 1. Extract dates from daily routines (primary source)
+    const allDailyRoutines = window._allDailyRoutines || [];
+    allDailyRoutines.forEach((rData) => {
+        if (!rData.routineDate || !rData.courseCode) return;
+        // Match by course code only (routine entries use courseCode)
+        if (String(rData.courseCode).trim().toUpperCase() === String(course.code).trim().toUpperCase()) {
             dates.add(rData.routineDate);
         }
     });
+
+    // 2. Also merge dates from already-uploaded resources (secondary source)
+    if (resourcesSnapshot) {
+        resourcesSnapshot.forEach((resDoc) => {
+            const rData = resDoc.data ? { id: resDoc.id, ...resDoc.data() } : resDoc;
+            if (!rData.routineDate) return;
+            if (resourceMatchesCourse(rData, course)) {
+                dates.add(rData.routineDate);
+            }
+        });
+    }
+
     return Array.from(dates).sort((a, b) => b.localeCompare(a)); // newest first
 }
 
