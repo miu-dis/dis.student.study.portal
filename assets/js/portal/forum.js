@@ -56,15 +56,13 @@ export function renderForumTab(
     containerEl.innerHTML =
         `<div class="space-y-4">` +
         // Date filter selector (only if dates exist)
-        (dates.length > 0
-            ? `<div class="flex items-center gap-2 flex-wrap bg-white rounded-xl shadow-sm p-2.5 border border-gray-100">
-                <label class="text-[11px] font-semibold text-gray-600">${t("forumDateFilter")}:</label>
-                <select id="forumDateFilter" class="text-[11px] p-1.5 border border-gray-300 rounded bg-white font-medium text-indigo-700">
-                    <option value="all">${t("forumAllDates")}</option>
-                    ${dates.map((d) => `<option value="${esc(d)}">📅 ${esc(d)}</option>`).join("")}
-                </select>
-            </div>`
-            : "") +
+        `<div class="flex items-center gap-2 flex-wrap bg-white rounded-xl shadow-sm p-2.5 border border-gray-100">
+            <label class="text-[11px] font-semibold text-gray-600">${t("forumDateFilter")}:</label>
+            <select id="forumDateFilter" class="text-[11px] p-1.5 border border-gray-300 rounded bg-white font-medium text-indigo-700">
+                <option value="all">${t("forumAllDates")}</option>
+                ${dates.map((d) => `<option value="${esc(d)}">📅 ${esc(d)}</option>`).join("")}
+            </select>
+        </div>` +
         // New thread form
         (loggedInUserUID
             ? `<div class="bg-white rounded-xl shadow-md p-4 border border-indigo-100" id="forumNewThreadForm">` +
@@ -85,15 +83,13 @@ export function renderForumTab(
             `<div class="text-[9px] text-red-500 hidden mt-0.5" id="forumThreadContentErr"></div>` +
             `</div>` +
             // Date tag dropdown (only if dates exist)
-            (dates.length > 0
-                ? `<div class="flex items-center gap-2">
-                    <label class="text-[11px] font-semibold text-gray-600">${t("forumTagDate")}:</label>
-                    <select id="forumThreadDateTag" class="text-[11px] p-1.5 border border-gray-300 rounded bg-white">
-                        <option value="">${t("forumNoDate")}</option>
-                        ${dates.map((d) => `<option value="${esc(d)}">📅 ${esc(d)}</option>`).join("")}
-                    </select>
-                </div>`
-                : "") +
+            `<div class="flex items-center gap-2">
+                <label class="text-[11px] font-semibold text-gray-600">${t("forumTagDate")}:</label>
+                <select id="forumThreadDateTag" class="text-[11px] p-1.5 border border-gray-300 rounded bg-white">
+                    <option value="">${t("forumNoDate")}</option>
+                    ${dates.map((d) => `<option value="${esc(d)}">📅 ${esc(d)}</option>`).join("")}
+                </select>
+            </div>` +
             `<div class="flex justify-end">` +
             `<button type="submit" id="forumThreadSubmitBtn" ` +
             `class="portal-btn bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-lg">` +

@@ -287,21 +287,18 @@ export function renderCourseDetail(
         ? allFiles
         : allFiles.filter((r) => r.routineDate === currentFilter);
 
-    // Build date selector HTML
-    let dateSelectorHTML = "";
-    if (availableDates.length > 0) {
-        dateSelectorHTML = `<div class="mb-3 flex items-center gap-2 flex-wrap">
-            <label class="text-[11px] font-semibold text-gray-600">${t("resourcesDateFilter")}:</label>
-            <select id="courseDetailDateFilter" class="text-[11px] p-1.5 border border-gray-300 rounded bg-white font-medium text-emerald-700">
-                <option value="all"${currentFilter === "all" ? " selected" : ""}>${t("resourcesAllDates")} (${allFiles.length})</option>
-                ${availableDates.map((d) => {
-            const count = allFiles.filter((r) => r.routineDate === d).length;
-            const sel = d === currentFilter ? " selected" : "";
-            return `<option value="${esc(d)}"${sel}>📅 ${esc(d)} (${count})</option>`;
-        }).join("")}
-            </select>
-        </div>`;
-    }
+    // Build date selector HTML (always visible so users discover the feature)
+    let dateSelectorHTML = `<div class="mb-3 flex items-center gap-2 flex-wrap">
+        <label class="text-[11px] font-semibold text-gray-600">${t("resourcesDateFilter")}:</label>
+        <select id="courseDetailDateFilter" class="text-[11px] p-1.5 border border-gray-300 rounded bg-white font-medium text-emerald-700">
+            <option value="all"${currentFilter === "all" ? " selected" : ""}>${t("resourcesAllDates")} (${allFiles.length})</option>
+            ${availableDates.map((d) => {
+        const count = allFiles.filter((r) => r.routineDate === d).length;
+        const sel = d === currentFilter ? " selected" : "";
+        return `<option value="${esc(d)}"${sel}>📅 ${esc(d)} (${count})</option>`;
+    }).join("")}
+        </select>
+    </div>`;
 
     metaEl.innerHTML =
         `<span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded">${esc(course.code)}</span>` +
