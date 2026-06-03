@@ -470,14 +470,15 @@
                 groups[key].push(res);
             });
             cachedRoutineGroups = groups;
+            const handleTabChange = (newTab) => {
+                activeRoutineTab = newTab;
+                renderRoutineTabBar(cachedRoutineGroups, activeRoutineTab,
+                    document.getElementById("routineDayTabs"), handleTabChange);
+                renderRoutineListForTab(cachedRoutineGroups, activeRoutineTab,
+                    document.getElementById("adminRoutineList"));
+            };
             activeRoutineTab = renderRoutineTabBar(groups, activeRoutineTab,
-                document.getElementById("routineDayTabs"), (newTab) => {
-                    activeRoutineTab = newTab;
-                    renderRoutineTabBar(cachedRoutineGroups, activeRoutineTab,
-                        document.getElementById("routineDayTabs"), () => { });
-                    renderRoutineListForTab(cachedRoutineGroups, activeRoutineTab,
-                        document.getElementById("adminRoutineList"));
-                });
+                document.getElementById("routineDayTabs"), handleTabChange);
             renderRoutineListForTab(cachedRoutineGroups, activeRoutineTab,
                 document.getElementById("adminRoutineList"));
         });
