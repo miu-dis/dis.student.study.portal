@@ -752,8 +752,8 @@
                     if (studentOrd !== null && matchingOrdinals.indexOf(studentOrd) !== -1) {
                         students.push({
                             studentUID: d.id,
-                            studentId: data.universityUID || data.uid || d.id,
-                            name: data.name || data.universityUID || data.uid || d.id,
+                            studentId: data.universityUID || data.email || d.id,
+                            name: data.name || data.universityUID || data.email || d.id,
                         });
                     }
                 });
