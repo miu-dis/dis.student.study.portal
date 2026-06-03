@@ -751,6 +751,7 @@
                     // Match: student's trimester ordinal must be in the resolved set
                     if (studentOrd !== null && matchingOrdinals.indexOf(studentOrd) !== -1) {
                         students.push({
+                            studentUID: d.id,
                             studentId: data.universityUID || data.uid || d.id,
                             name: data.name || data.universityUID || data.uid || d.id,
                         });

@@ -103,7 +103,8 @@ export function buildBatchAttendanceUI(routineId, routineData, students, existin
     }
     const rows = students
         .map((s) => {
-            const currentStatus = existingRecords.get(s.studentId) || "present";
+            const uid = s.studentUID || s.studentId;
+            const currentStatus = existingRecords.get(uid) || "present";
             const presentChecked = currentStatus === "present" ? "checked" : "";
             const absentChecked = currentStatus === "absent" ? "checked" : "";
             return /* html */ `
@@ -113,13 +114,13 @@ export function buildBatchAttendanceUI(routineId, routineData, students, existin
             <td class="py-2 px-2">
                 <div class="flex items-center gap-3">
                     <label class="inline-flex items-center gap-1 cursor-pointer px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${presentChecked ? "bg-emerald-100 text-emerald-800 ring-2 ring-emerald-500" : "bg-gray-100 text-gray-500 hover:bg-emerald-50"}">
-                        <input type="radio" name="att_${escapeHtml(s.studentId)}" value="present" ${presentChecked}
-                            class="sr-only" data-student="${escapeHtml(s.studentId)}" data-status="present">
+                        <input type="radio" name="att_${escapeHtml(uid)}" value="present" ${presentChecked}
+                            class="sr-only" data-student="${escapeHtml(uid)}" data-status="present">
                         <i class="fa-solid fa-check text-[9px]"></i> ${tr("statusPresent")}
                     </label>
                     <label class="inline-flex items-center gap-1 cursor-pointer px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${absentChecked ? "bg-red-100 text-red-800 ring-2 ring-red-500" : "bg-gray-100 text-gray-500 hover:bg-red-50"}">
-                        <input type="radio" name="att_${escapeHtml(s.studentId)}" value="absent" ${absentChecked}
-                            class="sr-only" data-student="${escapeHtml(s.studentId)}" data-status="absent">
+                        <input type="radio" name="att_${escapeHtml(uid)}" value="absent" ${absentChecked}
+                            class="sr-only" data-student="${escapeHtml(uid)}" data-status="absent">
                         <i class="fa-solid fa-xmark text-[9px]"></i> ${tr("statusAbsent")}
                     </label>
                 </div>
