@@ -146,6 +146,16 @@ service cloud.firestore {
     }
 
     // ═══════════════════════════════════════════════════════════════
+    // routine_date_ledger
+    // ═══════════════════════════════════════════════════════════════
+    match /routine_date_ledger/{ledgerId} {
+      // All authenticated users can read (student portal needs confirmed dates)
+      allow read: if isAuthenticated();
+      // Only admin can create/update/delete ledger entries
+      allow create, update, delete: if isAuthenticated() && isAdmin();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // Default: deny everything else
     // ═══════════════════════════════════════════════════════════════
     match /{document=**} {
