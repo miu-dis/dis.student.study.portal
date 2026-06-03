@@ -195,7 +195,7 @@ async function _loadAndRenderResources() {
  */
 function _bindClassSectionEvents() {
     const { firestore, loggedInUserUID, loggedInUserName, canManageResource, t, esc } = _opts;
-    const { db, doc, getDoc } = firestore;
+    const { db, doc, getDoc, deleteDoc } = firestore;
 
     // Upload button
     const uploadBtn = document.getElementById("dailyResourcesUploadBtn");
@@ -273,7 +273,7 @@ function _bindClassSectionEvents() {
                     try {
                         await _opts.deleteResourceById(
                             resourceId,
-                            { getDoc, doc, db },
+                            { getDoc, doc, db, deleteDoc },
                             (rData) => canManageResource(rData, loggedInUserUID, loggedInUserName),
                             loggedInUserUID,
                             loggedInUserName,

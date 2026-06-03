@@ -102,6 +102,12 @@ const TRANSLATIONS = {
             dailyResourcesBtnUpload: "Add Resource", dailyResourcesSlot: "Slot",
             dailyResourcesBy: "By", dailyResourcesCount: "resource(s)",
             dailyResourcesBadge: "Resources",
+            resourcesDateFilter: "Filter by Class Date",
+            resourcesAllDates: "All Dates",
+            forumDateFilter: "Filter by Date",
+            forumAllDates: "All Dates",
+            forumTagDate: "Tag to Class Date",
+            forumNoDate: "No Date (General)",
         },
         bn: {
             navTitle: "ডিআইএস স্টুডেন্ট পোর্টাল", btnNavLogin: "লগইন / রেজিস্টার", btnMyProfile: "আমার প্রোফাইল", btnLogout: "লগআউট",
@@ -194,6 +200,12 @@ const TRANSLATIONS = {
             dailyResourcesBtnUpload: "রিসোর্স যোগ করুন", dailyResourcesSlot: "স্লট",
             dailyResourcesBy: "প্রকাশক", dailyResourcesCount: "টি রিসোর্স",
             dailyResourcesBadge: "রিসোর্স",
+            resourcesDateFilter: "ক্লাসের তারিখ অনুযায়ী ফিল্টার",
+            resourcesAllDates: "সবগুলো তারিখ",
+            forumDateFilter: "তারিখ অনুযায়ী ফিল্টার",
+            forumAllDates: "সবগুলো তারিখ",
+            forumTagDate: "ক্লাসের তারিখে ট্যাগ করুন",
+            forumNoDate: "কোনো তারিখ নেই (সাধারণ)",
         }
     },
 

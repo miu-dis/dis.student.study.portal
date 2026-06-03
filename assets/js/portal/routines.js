@@ -86,13 +86,6 @@ export function buildRoutineCardHTML(data, t, esc, opts = {}) {
         ? `<div class="text-[10px] text-emerald-600 font-semibold mb-1">📅 ${esc(data.routineDate)}</div>`
         : "";
 
-    // Resource count badge (only for daily routines with routineDate)
-    let resourceBadge = "";
-    if (data.routineDate && opts.resourcesSnapshot) {
-        const count = countResourcesForRoutine(data, opts.resourcesSnapshot);
-        resourceBadge = `<button type="button" data-open-daily-resources="${esc(data.routineDate)}" data-course-code="${esc(data.courseCode)}" data-course-title="${esc(data.subject || "")}" data-course-teacher="${esc(data.teacherCode || "")}" data-time-slot="${esc(data.timeSlot || "")}" data-routine-id="${esc(data.id || "")}" class="portal-btn inline-flex items-center gap-1 text-[10px] mt-1 px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-600 hover:text-white font-bold transition-colors">📎 ${t("dailyResourcesBadge")} (${count})</button>`;
-    }
-
     return (
         `<div class="p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm text-xs">` +
         `<div class="flex justify-between items-center mb-0.5">` +
@@ -101,7 +94,6 @@ export function buildRoutineCardHTML(data, t, esc, opts = {}) {
         `</div>` +
         `<div class="mb-1 text-[11px] text-amber-700 font-bold">Batch: ${esc(data.batchNumber)}</div>` +
         dateLabel +
-        resourceBadge +
         `<div class="grid grid-cols-2 text-[11px] text-gray-600 gap-y-0.5 border-t border-dashed pt-1 mt-1">` +
         `<p><b>Code:</b> ${esc(data.courseCode)}</p>` +
         `<p><b>Room:</b> ${esc(data.room)}</p>` +
@@ -132,8 +124,7 @@ export function initRoutineAndNoticeListeners(
     noticeContainer,
     daysWithClasses,
     getPortalT,
-    esc,
-    getResourcesSnapshot
+    esc
 ) {
     const { db, collection, onSnapshot, query, orderBy } = firestore;
 
@@ -147,10 +138,6 @@ export function initRoutineAndNoticeListeners(
             Object.keys(daysWithClasses).forEach((day) => {
                 permanentByDay[day] = [];
             });
-
-            const resourcesSnapshot = typeof getResourcesSnapshot === "function"
-                ? getResourcesSnapshot()
-                : null;
 
             snapshot.forEach((docSnap) => {
                 const data = { id: docSnap.id, ...docSnap.data() };
@@ -170,7 +157,7 @@ export function initRoutineAndNoticeListeners(
 
             dailyRoutines.sort(compareRoutineByTime);
             dailyContainer.innerHTML = dailyRoutines.length
-                ? dailyRoutines.map((d) => buildRoutineCardHTML(d, t, esc, { resourcesSnapshot })).join("")
+                ? dailyRoutines.map((d) => buildRoutineCardHTML(d, t, esc)).join("")
                 : `<p class="text-xs text-gray-400 col-span-2 p-2">${t("noClasses")}</p>`;
 
             Object.keys(daysWithClasses).forEach((day) => {
@@ -179,7 +166,7 @@ export function initRoutineAndNoticeListeners(
                 const items = permanentByDay[day].sort(compareRoutineByTime);
                 if (items.length) {
                     el.innerHTML = items
-                        .map((d) => buildRoutineCardHTML(d, t, esc, { resourcesSnapshot }))
+                        .map((d) => buildRoutineCardHTML(d, t, esc))
                         .join("");
                     daysWithClasses[day] = true;
                 } else {

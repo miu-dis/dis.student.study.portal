@@ -143,6 +143,25 @@ export function countResourcesForCourse(course, resourcesSnapshot) {
  * @param {Array} resourcesSnapshot
  * @returns {Array<Object>}
  */
+/**
+ * Extract unique routine dates for a course from the resources snapshot.
+ * @param {Object} course - { code, title, teacher }
+ * @param {Array} resourcesSnapshot - array of resource docs
+ * @returns {string[]} sorted unique YYYY-MM-DD dates, newest first
+ */
+export function getAvailableDatesForCourse(course, resourcesSnapshot) {
+    if (!resourcesSnapshot || !course || !course.code) return [];
+    const dates = new Set();
+    resourcesSnapshot.forEach((resDoc) => {
+        const rData = resDoc.data ? { id: resDoc.id, ...resDoc.data() } : resDoc;
+        if (!rData.routineDate) return;
+        if (resourceMatchesCourse(rData, course)) {
+            dates.add(rData.routineDate);
+        }
+    });
+    return Array.from(dates).sort((a, b) => b.localeCompare(a)); // newest first
+}
+
 export function getResourcesForCourse(course, resourcesSnapshot) {
     const list = [];
     if (!resourcesSnapshot || !course) return list;
@@ -255,11 +274,34 @@ export function renderCourseDetail(
     resourcesSnapshot,
     opts = {}
 ) {
-    const files = getResourcesForCourse(course, resourcesSnapshot);
+    const allFiles = getResourcesForCourse(course, resourcesSnapshot);
+    const availableDates = getAvailableDatesForCourse(course, resourcesSnapshot);
     const catLabels =
         (RESOURCE_CATEGORY_LABELS && RESOURCE_CATEGORY_LABELS[lang]) ||
         (RESOURCE_CATEGORY_LABELS && RESOURCE_CATEGORY_LABELS.en) ||
         {};
+
+    // Read previously selected date (or default to "all")
+    const currentFilter = resourcesEl.dataset.dateFilter || "all";
+    const files = currentFilter === "all"
+        ? allFiles
+        : allFiles.filter((r) => r.routineDate === currentFilter);
+
+    // Build date selector HTML
+    let dateSelectorHTML = "";
+    if (availableDates.length > 0) {
+        dateSelectorHTML = `<div class="mb-3 flex items-center gap-2 flex-wrap">
+            <label class="text-[11px] font-semibold text-gray-600">${t("resourcesDateFilter")}:</label>
+            <select id="courseDetailDateFilter" class="text-[11px] p-1.5 border border-gray-300 rounded bg-white font-medium text-emerald-700">
+                <option value="all"${currentFilter === "all" ? " selected" : ""}>${t("resourcesAllDates")} (${allFiles.length})</option>
+                ${availableDates.map((d) => {
+            const count = allFiles.filter((r) => r.routineDate === d).length;
+            const sel = d === currentFilter ? " selected" : "";
+            return `<option value="${esc(d)}"${sel}>📅 ${esc(d)} (${count})</option>`;
+        }).join("")}
+            </select>
+        </div>`;
+    }
 
     metaEl.innerHTML =
         `<span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded">${esc(course.code)}</span>` +
@@ -292,8 +334,12 @@ export function renderCourseDetail(
             `</section>`;
     });
     resourcesEl.innerHTML =
-        sectionsHtml ||
-        `<p class="text-sm text-gray-400 p-6 text-center border border-dashed rounded-xl bg-white">${t("noSharedFiles")}</p>`;
+        dateSelectorHTML +
+        (sectionsHtml ||
+            `<p class="text-sm text-gray-400 p-6 text-center border border-dashed rounded-xl bg-white">${t("noSharedFiles")}</p>`);
+
+    // Store the filter state on the element itself
+    resourcesEl.dataset.dateFilter = currentFilter;
 
     uploadBtn.disabled = !canUpload;
     uploadBtn.className = canUpload

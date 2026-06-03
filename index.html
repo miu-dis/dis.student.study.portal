@@ -790,6 +790,7 @@
             getCombinedTrimesterKey,
             countResourcesForCourse,
             getResourcesForCourse,
+            getAvailableDatesForCourse,
             canUploadInCurrentView,
             renderCourseGrid,
             renderCourseDetail,
@@ -1003,6 +1004,7 @@
             var canUpload = canUploadInCurrentView(loggedInUserUID, studentCurrentTrimesterKey, getTrimesterKeyFromFilters, normalizeTrimesterKey);
             var viewKey = getTrimesterKeyFromFilters();
             var lang = window.getPortalLang();
+            var availableDates = getAvailableDatesForCourse(course, resourcesSnapshot);
             renderCourseDetail(
                 course,
                 document.getElementById("courseDetailMeta"),
@@ -1025,7 +1027,8 @@
                 loggedInUserUID,
                 loggedInUserName,
                 { db: db, collection: collection, addDoc: addDoc, onSnapshot: onSnapshot, query: query, orderBy: orderBy, where: where, serverTimestamp: serverTimestamp, deleteDoc: deleteDoc, doc: doc, updateDoc: updateDoc, getDocs: getDocs, increment: increment },
-                showToast
+                showToast,
+                availableDates
             );
             forumUnsubscribe = forumResult;
             _switchCourseDetailTab(activeCourseDetailTab);
@@ -1117,50 +1120,8 @@
             document.getElementById("noticeList"),
             { Saturday: false, Sunday: false, Monday: false, Tuesday: false, Wednesday: false, Friday: false },
             function () { return window.portalT; },
-            escapeHtml,
-            function () { return resourcesSnapshot; }
+            escapeHtml
         );
-
-        // ---- Daily Resources badge click handler (delegation on daily routine list) ----
-        document.getElementById("dailyRoutineList").addEventListener("click", function (e) {
-            var badge = e.target.closest("[data-open-daily-resources]");
-            if (!badge) return;
-            var routineDate = badge.getAttribute("data-open-daily-resources");
-            var courseCode = badge.getAttribute("data-course-code") || "";
-            var courseTitle = badge.getAttribute("data-course-title") || "";
-            var courseTeacher = badge.getAttribute("data-course-teacher") || "";
-            var timeSlot = badge.getAttribute("data-time-slot") || "";
-            var routineId = badge.getAttribute("data-routine-id") || "";
-            openDailyResourcesView(routineDate, {
-                courseCode: courseCode,
-                subject: courseTitle,
-                courseTitle: courseTitle,
-                teacherCode: courseTeacher,
-                courseTeacher: courseTeacher,
-                timeSlot: timeSlot,
-                id: routineId,
-                routineId: routineId,
-                routineDate: routineDate,
-            }, {
-                firestore: { db: db, collection: collection, query: query, where: where, orderBy: orderBy, onSnapshot: onSnapshot, getDocs: getDocs, doc: doc, getDoc: getDoc },
-                loggedInUserUID: loggedInUserUID,
-                loggedInUserName: loggedInUserName,
-                t: window.portalT,
-                esc: escapeHtml,
-                renderResourceItemHTML: renderResourceItemHTML,
-                canManageResource: canManageResource,
-                openEditResourceModal: function (resourceId, firestore, latestMappedCourses, loggedInUserName, loggedInUserUID, studentCurrentTrimesterKey, canManageResourceFn, t, switchUploadMethod) {
-                    openEditResourceModal(resourceId, firestore, latestMappedCourses, loggedInUserName, loggedInUserUID, studentCurrentTrimesterKey, canManageResourceFn, t, switchUploadMethod);
-                },
-                deleteResourceById: function (resourceId, firestore, canManageResourceFn, loggedInUserUID, loggedInUserName, t) {
-                    deleteResourceById(resourceId, firestore, canManageResourceFn, loggedInUserUID, loggedInUserName, t);
-                },
-                openResourceFile: function (rData) {
-                    return loadFileStorage().then(function (fs) { return fs.openResourceFile(rData); });
-                },
-                showToast: showToast,
-            });
-        });
 
         // ---- Course detail navigation ----
         document.getElementById("courseDetailBack").addEventListener("click", closeCourseDetail);
@@ -1179,6 +1140,48 @@
             }
         });
 
+        // ---- Date filter change handlers (delegation) ----
+        document.getElementById("courseDetailView").addEventListener("change", function (e) {
+            // Resources date filter
+            if (e.target && e.target.id === "courseDetailDateFilter") {
+                var resourcesEl = document.getElementById("courseDetailResources");
+                resourcesEl.dataset.dateFilter = e.target.value;
+                // Re-render the course detail
+                if (activeDetailCourseIndex !== null && latestMappedCourses[activeDetailCourseIndex]) {
+                    _renderCourseDetail(latestMappedCourses[activeDetailCourseIndex]);
+                }
+                // Set daily upload context if a specific date is selected
+                if (e.target.value !== "all" && activeDetailCourseIndex !== null) {
+                    var course = latestMappedCourses[activeDetailCourseIndex];
+                    if (course) {
+                        window._dailyUploadContext = {
+                            routineDate: e.target.value,
+                            courseCode: course.code,
+                            courseTitle: course.title,
+                            courseTeacher: course.teacher,
+                            subject: course.title,
+                            teacherCode: course.teacher,
+                            timeSlot: "",
+                            id: "",
+                            routineId: "",
+                        };
+                    }
+                } else {
+                    window._dailyUploadContext = null;
+                }
+            }
+            // Forum date filter
+            if (e.target && e.target.id === "forumDateFilter") {
+                var threadListEl = document.getElementById("forumThreadList");
+                if (threadListEl) {
+                    threadListEl.dataset.forumDateFilter = e.target.value;
+                }
+                if (forumUnsubscribe && forumUnsubscribe.refreshThreadList) {
+                    forumUnsubscribe.refreshThreadList();
+                }
+            }
+        });
+
         // ---- Resource grid click delegation ----
         document.getElementById("courseDetailResources").addEventListener("click", function (e) {
             handleResourceGridClick(e, {
@@ -1191,11 +1194,11 @@
                         window.portalT, window.switchUploadMethod
                     );
                 },
-                getDoc: getDoc, doc: doc, db: db,
+                getDoc: getDoc, doc: doc, db: db, deleteDoc: deleteDoc,
                 openEditResourceModalFn: function (resourceId) {
                     openEditResourceModal(
                         resourceId,
-                        { getDoc: getDoc, doc: doc, db: db },
+                        { getDoc: getDoc, doc: doc, db: db, deleteDoc: deleteDoc },
                         latestMappedCourses,
                         loggedInUserName,
                         loggedInUserUID,
@@ -1208,7 +1211,7 @@
                 deleteResourceByIdFn: function (resourceId) {
                     deleteResourceById(
                         resourceId,
-                        { getDoc: getDoc, doc: doc, db: db },
+                        { getDoc: getDoc, doc: doc, db: db, deleteDoc: deleteDoc },
                         function (rData) { return canManageResource(rData, loggedInUserUID, loggedInUserName); },
                         loggedInUserUID, loggedInUserName, window.portalT
                     );
@@ -1228,11 +1231,11 @@
                         window.portalT, window.switchUploadMethod
                     );
                 },
-                getDoc: getDoc, doc: doc, db: db,
+                getDoc: getDoc, doc: doc, db: db, deleteDoc: deleteDoc,
                 openEditResourceModalFn: function (resourceId) {
                     openEditResourceModal(
                         resourceId,
-                        { getDoc: getDoc, doc: doc, db: db },
+                        { getDoc: getDoc, doc: doc, db: db, deleteDoc: deleteDoc },
                         latestMappedCourses,
                         loggedInUserName,
                         loggedInUserUID,
@@ -1245,7 +1248,7 @@
                 deleteResourceByIdFn: function (resourceId) {
                     deleteResourceById(
                         resourceId,
-                        { getDoc: getDoc, doc: doc, db: db },
+                        { getDoc: getDoc, doc: doc, db: db, deleteDoc: deleteDoc },
                         function (rData) { return canManageResource(rData, loggedInUserUID, loggedInUserName); },
                         loggedInUserUID, loggedInUserName, window.portalT
                     );
@@ -1276,7 +1279,7 @@
                         routineId: "",
                         routineDate: routineDate,
                     }, {
-                        firestore: { db: db, collection: collection, query: query, where: where, orderBy: orderBy, onSnapshot: onSnapshot, getDocs: getDocs, doc: doc, getDoc: getDoc },
+                        firestore: { db: db, collection: collection, query: query, where: where, orderBy: orderBy, onSnapshot: onSnapshot, getDocs: getDocs, doc: doc, getDoc: getDoc, deleteDoc: deleteDoc },
                         loggedInUserUID: loggedInUserUID,
                         loggedInUserName: loggedInUserName,
                         t: window.portalT,

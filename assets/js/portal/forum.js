@@ -46,13 +46,25 @@ export function renderForumTab(
     loggedInUserUID,
     loggedInUserName,
     firestore,
-    showToast
+    showToast,
+    availableDates
 ) {
     const { db, collection, addDoc, onSnapshot, query, orderBy, where, serverTimestamp, deleteDoc, doc, updateDoc, getDocs, increment } = firestore;
 
     // ── Build the HTML skeleton ───────────────────────────────────────
+    const dates = availableDates || [];
     containerEl.innerHTML =
         `<div class="space-y-4">` +
+        // Date filter selector (only if dates exist)
+        (dates.length > 0
+            ? `<div class="flex items-center gap-2 flex-wrap bg-white rounded-xl shadow-sm p-2.5 border border-gray-100">
+                <label class="text-[11px] font-semibold text-gray-600">${t("forumDateFilter")}:</label>
+                <select id="forumDateFilter" class="text-[11px] p-1.5 border border-gray-300 rounded bg-white font-medium text-indigo-700">
+                    <option value="all">${t("forumAllDates")}</option>
+                    ${dates.map((d) => `<option value="${esc(d)}">📅 ${esc(d)}</option>`).join("")}
+                </select>
+            </div>`
+            : "") +
         // New thread form
         (loggedInUserUID
             ? `<div class="bg-white rounded-xl shadow-md p-4 border border-indigo-100" id="forumNewThreadForm">` +
@@ -72,6 +84,16 @@ export function renderForumTab(
             `placeholder="${esc(t("forumThreadContentPH"))}" maxlength="5000"></textarea>` +
             `<div class="text-[9px] text-red-500 hidden mt-0.5" id="forumThreadContentErr"></div>` +
             `</div>` +
+            // Date tag dropdown (only if dates exist)
+            (dates.length > 0
+                ? `<div class="flex items-center gap-2">
+                    <label class="text-[11px] font-semibold text-gray-600">${t("forumTagDate")}:</label>
+                    <select id="forumThreadDateTag" class="text-[11px] p-1.5 border border-gray-300 rounded bg-white">
+                        <option value="">${t("forumNoDate")}</option>
+                        ${dates.map((d) => `<option value="${esc(d)}">📅 ${esc(d)}</option>`).join("")}
+                    </select>
+                </div>`
+                : "") +
             `<div class="flex justify-end">` +
             `<button type="submit" id="forumThreadSubmitBtn" ` +
             `class="portal-btn bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-lg">` +
@@ -108,10 +130,12 @@ export function renderForumTab(
         const title = esc(threadData.title || "");
         const content = esc(threadData.content || "");
         const isOwner = loggedInUserUID && threadData.authorUID === loggedInUserUID;
+        const threadDate = threadData.routineDate || "";
 
         const badgeHtml = [];
         if (isPinned) badgeHtml.push(`<span class="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold"><i class="fa-solid fa-thumbtack mr-0.5"></i>${t("forumPinned")}</span>`);
         if (isLocked) badgeHtml.push(`<span class="text-[9px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold"><i class="fa-solid fa-lock mr-0.5"></i>${t("forumLocked")}</span>`);
+        if (threadDate) badgeHtml.push(`<span class="text-[9px] bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded font-medium"><i class="fa-regular fa-calendar mr-0.5"></i>${esc(threadDate)}</span>`);
 
         const deleteBtn = (isOwner)
             ? `<button type="button" data-delete-thread="${threadData.id}" class="text-[9px] text-red-500 hover:text-red-700 underline">${t("btnDelete")}</button>`
@@ -220,6 +244,9 @@ export function renderForumTab(
         orderBy("createdAt", "desc")
     );
 
+    // Cache for client-side re-filtering without re-fetching
+    let cachedAllThreads = [];
+
     const unsubscribeThreads = onSnapshot(threadsQuery, (snapshot) => {
         // Clean up all reply listeners
         Object.keys(replyUnsubscribers).forEach((tid) => {
@@ -228,6 +255,7 @@ export function renderForumTab(
         for (const k in replyUnsubscribers) delete replyUnsubscribers[k];
 
         if (snapshot.empty) {
+            cachedAllThreads = [];
             threadListEl.innerHTML =
                 `<div class="text-center py-8 border border-dashed border-gray-300 rounded-xl bg-white">` +
                 `<i class="fa-solid fa-comments text-3xl text-gray-300 mb-2 block"></i>` +
@@ -235,19 +263,62 @@ export function renderForumTab(
                 `</div>`;
             return;
         }
-        const htmlParts = [];
+        const allThreads = [];
         snapshot.forEach((doc) => {
             const data = doc.data();
             data.id = doc.id;
+            allThreads.push(data);
+        });
+        cachedAllThreads = allThreads;
+
+        // Render with current filter
+        refreshThreadList();
+    });
+
+    // ── Client-side filter + re-render (called by change handler) ──────
+    function refreshThreadList() {
+        const forumDateFilter = threadListEl.dataset.forumDateFilter || "all";
+
+        if (!cachedAllThreads.length) {
+            threadListEl.innerHTML =
+                `<div class="text-center py-8 border border-dashed border-gray-300 rounded-xl bg-white">` +
+                `<i class="fa-solid fa-comments text-3xl text-gray-300 mb-2 block"></i>` +
+                `<p class="text-xs text-gray-400">${t("forumNoThreads")}</p>` +
+                `</div>`;
+            return;
+        }
+
+        // Filter by date if selected
+        const filteredThreads = forumDateFilter === "all"
+            ? cachedAllThreads
+            : cachedAllThreads.filter((td) => td.routineDate === forumDateFilter);
+
+        // Clean up all reply listeners before re-rendering
+        Object.keys(replyUnsubscribers).forEach((tid) => {
+            if (replyUnsubscribers[tid]) replyUnsubscribers[tid]();
+        });
+        for (const k in replyUnsubscribers) delete replyUnsubscribers[k];
+
+        if (!filteredThreads.length) {
+            threadListEl.innerHTML =
+                `<div class="text-center py-8 border border-dashed border-gray-300 rounded-xl bg-white">` +
+                `<i class="fa-solid fa-comments text-3xl text-gray-300 mb-2 block"></i>` +
+                `<p class="text-xs text-gray-400">${t("forumNoThreads")}</p>` +
+                `</div>`;
+            return;
+        }
+
+        const htmlParts = [];
+        filteredThreads.forEach((data) => {
             htmlParts.push(renderThreadCard(data));
         });
         threadListEl.innerHTML = htmlParts.join("");
 
         // Load replies for each thread
-        snapshot.forEach((doc) => {
-            loadReplies(doc.id);
+        filteredThreads.forEach((data) => {
+            loadReplies(data.id);
         });
-    });
+    }
 
     // ── Thread form submit handler ────────────────────────────────────
     if (threadForm) {
@@ -267,6 +338,8 @@ export function renderForumTab(
             submitBtn.innerText = "...";
 
             try {
+                const dateTagEl = document.getElementById("forumThreadDateTag");
+                const routineDate = dateTagEl ? dateTagEl.value : "";
                 await addDoc(collection(db, "forum_threads"), {
                     courseCode: course.code,
                     courseTitle: course.title,
@@ -280,6 +353,7 @@ export function renderForumTab(
                     replyCount: 0,
                     isPinned: false,
                     isLocked: false,
+                    routineDate: routineDate || null,
                 });
                 document.getElementById("forumThreadTitle").value = "";
                 document.getElementById("forumThreadContent").value = "";
@@ -384,13 +458,14 @@ export function renderForumTab(
         }
     });
 
-    // ── Return cleanup function ───────────────────────────────────────
+    // ── Return cleanup function + refresh ─────────────────────────────
     return {
         unsubscribe: () => {
             unsubscribeThreads();
             Object.keys(replyUnsubscribers).forEach((tid) => {
                 if (replyUnsubscribers[tid]) replyUnsubscribers[tid]();
             });
-        }
+        },
+        refreshThreadList: refreshThreadList
     };
 }
