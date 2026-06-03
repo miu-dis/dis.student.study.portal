@@ -209,6 +209,23 @@
             </div>
         </div>
 
+        <!-- Routine Date Ledger -->
+        <div class="portal-card bg-white p-4 rounded-xl shadow border-t-4 border-teal-600 mt-6">
+            <h3 class="text-sm font-bold text-gray-700 mb-2 flex items-center justify-between flex-wrap gap-2">
+                <span><i class="fa-solid fa-calendar-check text-teal-600 mr-2"></i> Routine Date Ledger</span>
+                <span id="ledgerCount" class="text-[10px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full">0
+                    entries</span>
+            </h3>
+            <p class="text-[10px] text-gray-400 mb-2">ডেইলি রুটিন তৈরি করলে অটোমেটিক সিঙ্ক হবে। ✅ / ❌ টগল করে কনফার্ম
+                করুন ক্লাস হয়েছে কিনা।</p>
+            <div id="adminLedgerList" class="space-y-2 max-h-[20rem] overflow-y-auto text-xs pr-1">
+                <div class="ui-state ui-state--loading" role="status">
+                    <div class="ui-state__spinner"></div>
+                    <p class="ui-state__message">Loading ledger...</p>
+                </div>
+            </div>
+        </div>
+
         <div class="portal-card bg-white p-6 rounded-xl shadow border-t-4 border-purple-600 mb-8">
             <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center justify-between">
                 <span><i class="fa-solid fa-folder-open text-purple-600 mr-2"></i> Student Uploaded Resources</span>
@@ -350,6 +367,7 @@
             initNoticeEditToolbar, saveNoticeEdit, renderNoticeList,
         } from "./assets/js/admin/noticeManager.js";
         import { renderStudentTable } from "./assets/js/admin/studentManager.js";
+        import { renderLedgerTable } from "./assets/js/admin/routineLedgerManager.js";
         import {
             renderAdminResourceList, handleAdminResourceClick,
             buildResourceEditForm, initResourceEditPreview, saveResourceEdit,
@@ -440,9 +458,36 @@
         initNoticeToolbar(document.getElementById("noticeContent"), "boldBtn", "italicBtn");
 
         // ─── Form submissions ───
-        document.getElementById("routineForm").addEventListener("submit", (e) =>
-            handleRoutineFormSubmit(e, db, collection, addDoc, showToast, adminT)
-        );
+        document.getElementById("routineForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            var boardType = document.getElementById("boardType").value;
+            // Only sync to ledger for daily routines
+            if (boardType === "daily") {
+                var courseCode = document.getElementById("courseCode").value.trim();
+                var routineDateEl = document.getElementById("routineDate");
+                var routineDate = routineDateEl ? routineDateEl.value : "";
+                if (courseCode && routineDate) {
+                    var ledgerId = courseCode.toUpperCase() + "_" + routineDate;
+                    try {
+                        await setDoc(doc(db, "routine_date_ledger", ledgerId), {
+                            courseCode: courseCode,
+                            subject: document.getElementById("subject").value.trim(),
+                            routineDate: routineDate,
+                            batchNumber: document.getElementById("batchNumber").value.trim(),
+                            teacherCode: document.getElementById("teacherCode").value.trim(),
+                            classHeld: false,
+                            confirmedAt: null,
+                            confirmedBy: null,
+                            createdAt: new Date().toISOString(),
+                        }, { merge: true });
+                    } catch (err) {
+                        console.error("Failed to sync ledger:", err);
+                    }
+                }
+            }
+            // Delegate to original handler
+            await handleRoutineFormSubmit(e, db, collection, addDoc, showToast, adminT);
+        });
         document.getElementById("courseMapForm").addEventListener("submit", (e) =>
             handleCourseMapSubmit(e, db, { doc, getDoc, setDoc, updateDoc, arrayUnion }, showToast, adminT)
         );
@@ -522,6 +567,18 @@
                 });
             renderMappingListForTab(cachedMappingGroups, activeMappingTab,
                 document.getElementById("adminMappingList"));
+        });
+
+        // ─── Routine Date Ledger real-time listener ───
+        onSnapshot(query(collection(db, "routine_date_ledger"), orderBy("routineDate", "desc")), (snapshot) => {
+            renderLedgerTable(
+                snapshot,
+                document.getElementById("adminLedgerList"),
+                document.getElementById("ledgerCount"),
+                db, doc, updateDoc,
+                _currentAdminName,
+                showToast, adminT
+            );
         });
 
         // Extract courses for attendance form from mappings

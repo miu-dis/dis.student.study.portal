@@ -128,6 +128,21 @@ export function initRoutineAndNoticeListeners(
 ) {
     const { db, collection, onSnapshot, query, orderBy } = firestore;
 
+    // ── Confirmed ledger listener (only classHeld=true entries) ──
+    window._confirmedLedger = [];
+    const unsubLedger = onSnapshot(
+        query(collection(db, "routine_date_ledger"), orderBy("routineDate", "desc")),
+        (ledgerSnapshot) => {
+            window._confirmedLedger = [];
+            ledgerSnapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                if (data.classHeld === true) {
+                    window._confirmedLedger.push(data);
+                }
+            });
+        }
+    );
+
     const unsubRoutine = onSnapshot(
         query(collection(db, "routines"), orderBy("createdAt", "desc")),
         (snapshot) => {
@@ -196,6 +211,7 @@ export function initRoutineAndNoticeListeners(
 
     return () => {
         unsubRoutine();
+        unsubLedger();
         unsubNotice();
     };
 }

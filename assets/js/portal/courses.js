@@ -149,17 +149,17 @@ export function getAvailableDatesForCourse(course, resourcesSnapshot) {
     if (!course || !course.code) return [];
     const dates = new Set();
 
-    // 1. Extract dates from daily routines (primary source)
-    const allDailyRoutines = window._allDailyRoutines || [];
-    allDailyRoutines.forEach((rData) => {
+    // 1. Extract dates from confirmed ledger (primary source — only admin-confirmed class dates)
+    const confirmedLedger = window._confirmedLedger || [];
+    confirmedLedger.forEach((rData) => {
         if (!rData.routineDate || !rData.courseCode) return;
-        // Match by course code only (routine entries use courseCode)
+        // Match by course code only (ledger entries use courseCode)
         if (String(rData.courseCode).trim().toUpperCase() === String(course.code).trim().toUpperCase()) {
             dates.add(rData.routineDate);
         }
     });
 
-    // 2. Also merge dates from already-uploaded resources (secondary source)
+    // 2. Also merge dates from already-uploaded resources (secondary fallback source)
     if (resourcesSnapshot) {
         resourcesSnapshot.forEach((resDoc) => {
             const rData = resDoc.data ? { id: resDoc.id, ...resDoc.data() } : resDoc;
