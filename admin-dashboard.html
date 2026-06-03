@@ -695,17 +695,66 @@
             const routineData = routine.data;
 
             try {
-                // Load students filtered by this routine's batchNumber
-                const userSnap = await getDocs(
-                    query(collection(db, "users"), where("role", "==", "student"), where("batchNumber", "==", routineData.batchNumber || ""))
-                );
-                const students = [];
-                userSnap.forEach((d) => {
-                    const data = d.data();
-                    students.push({
-                        studentId: data.uid || d.id,
-                        name: data.name || data.uid || d.id,
+                // ─── Validate: routine must have a courseCode ───
+                const courseCode = (routineData.courseCode || "").trim().toUpperCase();
+                if (!courseCode) {
+                    attMarkingArea.innerHTML = '<p class="text-gray-400 text-xs text-center py-4">' + adminT("noCourseCodeInRoutine") + '</p>';
+                    attMarkingArea.classList.remove("hidden");
+                    return;
+                }
+
+                // ─── Resolve trimester from course_mappings ───
+                // Helper: extract trimester ordinal from the second part (after " - ")
+                function extractTrimesterOrdinal(key) {
+                    if (!key) return null;
+                    var parts = key.split(" - ");
+                    if (parts.length < 2) return null;
+                    var secondPart = parts[1].trim();
+                    var match = secondPart.match(/(\d+)(?:st|nd|rd|th)/i);
+                    return match ? parseInt(match[1], 10) : null;
+                }
+
+                // Scan cachedMappingGroups for docKeys containing this courseCode
+                var matchingOrdinals = [];
+                var foundMapping = false;
+                for (var dk in cachedMappingGroups) {
+                    if (!cachedMappingGroups.hasOwnProperty(dk)) continue;
+                    var entries = cachedMappingGroups[dk];
+                    var hasCourse = entries.some(function (entry) {
+                        var cc = (entry.course && entry.course.code || "").trim().toUpperCase();
+                        return cc === courseCode;
                     });
+                    if (hasCourse) {
+                        foundMapping = true;
+                        var ord = extractTrimesterOrdinal(dk);
+                        if (ord !== null && matchingOrdinals.indexOf(ord) === -1) {
+                            matchingOrdinals.push(ord);
+                        }
+                    }
+                }
+
+                if (!foundMapping) {
+                    attMarkingArea.innerHTML = '<p class="text-gray-400 text-xs text-center py-4">' + adminT("noCourseMappingForAttendance") + '</p>';
+                    attMarkingArea.classList.remove("hidden");
+                    showToast(adminT("noCourseMappingForAttendance"), "warning");
+                    return;
+                }
+
+                // ─── Load ALL students, filter client-side by trimester ordinal ───
+                var userSnap = await getDocs(
+                    query(collection(db, "users"), where("role", "==", "student"))
+                );
+                var students = [];
+                userSnap.forEach(function (d) {
+                    var data = d.data();
+                    var studentOrd = extractTrimesterOrdinal(data.trimester || "");
+                    // Match: student's trimester ordinal must be in the resolved set
+                    if (studentOrd !== null && matchingOrdinals.indexOf(studentOrd) !== -1) {
+                        students.push({
+                            studentId: data.universityUID || data.uid || d.id,
+                            name: data.name || data.universityUID || data.uid || d.id,
+                        });
+                    }
                 });
 
                 // Existing records for this routine

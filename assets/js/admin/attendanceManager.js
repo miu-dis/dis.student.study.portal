@@ -99,7 +99,7 @@ export function buildTodayRoutineAttendanceList(todayRoutines, recordCounts, tod
 export function buildBatchAttendanceUI(routineId, routineData, students, existingRecords, t) {
     const tr = t || ((k) => k);
     if (!students || students.length === 0) {
-        return '<p class="text-gray-400 text-xs text-center py-4">' + tr("noStudentsInBatch") + '</p>';
+        return '<p class="text-gray-400 text-xs text-center py-4">' + tr("noStudentsForCourse") + '</p>';
     }
     const rows = students
         .map((s) => {
