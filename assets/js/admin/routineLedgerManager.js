@@ -2,7 +2,12 @@
 // Routine Date Ledger — table renderer, toggle, and bulk confirm for admin dashboard
 
 function esc(s) {
-    return String(s || "").replace(/&/g, "&").replace(/"/g, """).replace(/</g, " < ").replace(/>/g, " > ");
+    return String(s || "").replace(/[&"<>]/g, function (m) {
+        if (m === "&") return "&" + "amp;";
+        if (m === "\"") return "&" + "quot;";
+        if (m === "<") return "&" + "lt;";
+        return "&" + "gt;";
+    });
 }
 
 /**
