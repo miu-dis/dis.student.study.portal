@@ -115,12 +115,12 @@ export function buildBatchAttendanceUI(routineId, routineData, students, existin
                 <div class="flex items-center gap-3">
                     <label class="inline-flex items-center gap-1 cursor-pointer px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${presentChecked ? "bg-emerald-100 text-emerald-800 ring-2 ring-emerald-500" : "bg-gray-100 text-gray-500 hover:bg-emerald-50"}">
                         <input type="radio" name="att_${escapeHtml(uid)}" value="present" ${presentChecked}
-                            class="sr-only" data-student="${escapeHtml(uid)}" data-status="present">
+                            class="sr-only" data-student="${escapeHtml(uid)}" data-student-name="${escapeHtml(s.name)}" data-student-display-id="${escapeHtml(s.studentId)}" data-status="present">
                         <i class="fa-solid fa-check text-[9px]"></i> ${tr("statusPresent")}
                     </label>
                     <label class="inline-flex items-center gap-1 cursor-pointer px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${absentChecked ? "bg-red-100 text-red-800 ring-2 ring-red-500" : "bg-gray-100 text-gray-500 hover:bg-red-50"}">
                         <input type="radio" name="att_${escapeHtml(uid)}" value="absent" ${absentChecked}
-                            class="sr-only" data-student="${escapeHtml(uid)}" data-status="absent">
+                            class="sr-only" data-student="${escapeHtml(uid)}" data-student-name="${escapeHtml(s.name)}" data-student-display-id="${escapeHtml(s.studentId)}" data-status="absent">
                         <i class="fa-solid fa-xmark text-[9px]"></i> ${tr("statusAbsent")}
                     </label>
                 </div>
@@ -177,6 +177,8 @@ export function collectAttendanceRecords(containerEl) {
     radios.forEach((radio) => {
         records.push({
             studentUID: radio.dataset.student,
+            studentName: radio.dataset.studentName || radio.dataset.student,
+            studentDisplayId: radio.dataset.studentDisplayId || radio.dataset.student,
             status: radio.dataset.status,
         });
     });
@@ -316,17 +318,6 @@ export async function saveAttendanceRecords(routineId, routineData, records, fir
     }
     try {
         const { db, doc, setDoc, deleteDoc, collection, getDocs, query, where } = firestore;
-        // Get student names from users collection (batch in chunks of 30 for "in" query limit)
-        const uids = records.map((r) => r.studentUID);
-        const nameMap = new Map();
-        for (let i = 0; i < uids.length; i += 30) {
-            const chunk = uids.slice(i, i + 30);
-            const userSnap = await getDocs(query(collection(db, "users"), where("uid", "in", chunk)));
-            userSnap.forEach((d) => {
-                const data = d.data();
-                nameMap.set(data.uid || d.id, data.name || data.uid || d.id);
-            });
-        }
 
         // Delete existing records for this routine (to allow re-marking)
         const existingSnap = await getDocs(
@@ -335,7 +326,7 @@ export async function saveAttendanceRecords(routineId, routineData, records, fir
         const deletePromises = existingSnap.docs.map((d) => deleteDoc(doc(db, "attendance_records", d.id)));
         await Promise.all(deletePromises);
 
-        // Save new denormalized records
+        // Save new denormalized records — studentName and studentDisplayId come from dataset
         const batch = [];
         const now = new Date().toISOString();
         for (const record of records) {
@@ -348,7 +339,8 @@ export async function saveAttendanceRecords(routineId, routineData, records, fir
                     courseTitle: routineData.subject || routineData.courseTitle || "",
                     batchNumber: routineData.batchNumber || "",
                     studentUID: record.studentUID,
-                    studentName: nameMap.get(record.studentUID) || record.studentUID,
+                    studentName: record.studentName || record.studentUID,
+                    studentDisplayId: record.studentDisplayId || record.studentUID,
                     status: record.status,
                     markedAt: now,
                     markedBy: adminUID,
