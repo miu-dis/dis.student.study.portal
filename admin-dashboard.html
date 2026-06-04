@@ -598,13 +598,17 @@
                 Object.keys(cachedMappingGroups).forEach(function (docKey) {
                     (cachedMappingGroups[docKey] || []).forEach(function (entry) {
                         var c = entry.course;
-                        if (c && c.title && !seen[c.title]) {
-                            seen[c.title] = true;
-                            var code = String(c.code || "");
-                            var teacher = String(c.teacher || "");
-                            var titleEsc = String(c.title);
-                            options += '<option value="' + titleEsc + '" data-code="' + code + '" data-teacher="' + teacher + '">';
-                        }
+                        if (!c || !c.title) return;
+                        var code = String(c.code || "");
+                        var teacher = String(c.teacher || "");
+                        // Unique key: same title may appear with different codes/teachers
+                        var key = String(c.title).trim().toLowerCase() + "|||" + code.toLowerCase().trim() + "|||" + teacher.toLowerCase().trim();
+                        if (seen[key]) return;
+                        seen[key] = true;
+                        // Build display label — include code/teacher when present for disambiguation
+                        var label = String(c.title).trim();
+                        if (code || teacher) label += " — " + [code, teacher].filter(Boolean).join(", ");
+                        options += '<option value="' + label + '" data-code="' + code + '" data-teacher="' + teacher + '">';
                     });
                 });
             }
