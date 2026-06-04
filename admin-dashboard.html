@@ -1043,6 +1043,15 @@
                         }
                     });
                 }
+
+                // Wire "Cancel" button — dismiss marking area without saving
+                const cancelBtn = attMarkingArea.querySelector("#attCancelAttendance");
+                if (cancelBtn) {
+                    cancelBtn.addEventListener("click", () => {
+                        attMarkingArea.classList.add("hidden");
+                        attMarkingArea.innerHTML = "";
+                    });
+                }
             } catch (err) {
                 console.error("Mark attendance error:", err);
                 showToast(adminT("alertActionFailed"), "error");

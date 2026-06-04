@@ -149,6 +149,10 @@ export function buildBatchAttendanceUI(routineId, routineData, students, existin
                     class="portal-btn text-[10px] font-bold px-3 py-1.5 rounded-lg bg-rose-700 text-white hover:bg-rose-800">
                     <i class="fa-solid fa-floppy-disk mr-1"></i> ${tr("saveAttendance")}
                 </button>
+                <button type="button" id="attCancelAttendance"
+                    class="portal-btn text-[10px] font-bold px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200">
+                    <i class="fa-solid fa-xmark mr-1"></i> ${tr("cancelAttendance") || "Cancel"}
+                </button>
             </div>
         </div>
         <div class="overflow-x-auto border rounded-lg">
