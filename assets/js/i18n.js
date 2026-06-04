@@ -1,4 +1,4 @@
-/**
+﻿/**
  * i18n.js â€” Shared translation module for DIS Student Portal
  * Consolidates translations from all pages: portal, auth, gateway
  * All pages import { t, getLang, setLang, getDir } from this module.
@@ -295,6 +295,7 @@ const TRANSLATIONS = {
             allPresent: "All Present",
             allAbsent: "All Absent",
             saveAttendance: "Save Attendance",
+            cancelAttendance: "Cancel",
             attendanceSaved: "Attendance saved successfully!",
             noStudentsInBatch: "No students registered in this batch.",
             noStudentsForCourse: "No students found for this course. Students may not have registered with matching trimester info.",
@@ -393,6 +394,7 @@ const TRANSLATIONS = {
             allPresent: "à¦¸à¦¬à¦¾à¦‡ à¦‰à¦ªà¦¸à§à¦¥à¦¿à¦¤",
             allAbsent: "à¦¸à¦¬à¦¾à¦‡ à¦…à¦¨à§à¦ªà¦¸à§à¦¥à¦¿à¦¤",
             saveAttendance: "à¦¹à¦¾à¦œà¦¿à¦°à¦¾ à¦¸à¦‚à¦°à¦•à§à¦·à¦£",
+            cancelAttendance: "বাতিল",
             attendanceSaved: "à¦¹à¦¾à¦œà¦¿à¦°à¦¾ à¦¸à¦«à¦²à¦­à¦¾à¦¬à§‡ à¦¸à¦‚à¦°à¦•à§à¦·à¦¿à¦¤ à¦¹à¦¯à¦¼à§‡à¦›à§‡!",
             noStudentsInBatch: "à¦à¦‡ à¦¬à§à¦¯à¦¾à¦šà§‡ à¦•à§‹à¦¨à§‹ à¦¶à¦¿à¦•à§à¦·à¦¾à¦°à§à¦¥à§€ à¦¨à¦¿à¦¬à¦¨à§à¦§à¦¿à¦¤ à¦¨à§‡à¦‡à¥¤",
             noStudentsForCourse: "à¦à¦‡ à¦•à§‹à¦°à§à¦¸à§‡à¦° à¦œà¦¨à§à¦¯ à¦•à§‹à¦¨à§‹ à¦¶à¦¿à¦•à§à¦·à¦¾à¦°à§à¦¥à§€ à¦ªà¦¾à¦“à¦¯à¦¼à¦¾ à¦¯à¦¾à¦¯à¦¼à¦¨à¦¿à¥¤ à¦¶à¦¿à¦•à§à¦·à¦¾à¦°à§à¦¥à§€à¦°à¦¾ à¦¸à¦®à§à¦­à¦¬à¦¤ à¦®à¦¿à¦²à¦¿à¦¤ à¦Ÿà§à¦°à¦¾à¦‡à¦®à§‡à¦¸à§à¦Ÿà¦¾à¦° à¦¤à¦¥à§à¦¯ à¦¦à¦¿à¦¯à¦¼à§‡ à¦¨à¦¿à¦¬à¦¨à§à¦§à¦¿à¦¤ à¦¹à¦¯à¦¼à¦¨à¦¿à¥¤",
