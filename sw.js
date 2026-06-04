@@ -1,7 +1,7 @@
 // DIS Student Portal — Service Worker
 // Cache-first strategy for assets, network-first for HTML
 
-const CACHE_NAME = "dis-portal-v1";
+const CACHE_NAME = "dis-portal-v2";
 const ASSETS_TO_CACHE = [
     "/",
     "/index.html",
