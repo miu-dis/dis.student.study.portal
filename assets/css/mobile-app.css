@@ -1,0 +1,437 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   DIS Student Portal — Mobile App Stylesheet
+   Only active when body.app-mode is present (PWA/Capacitor standalone)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── CSS Custom Properties ── */
+:root {
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-left: env(safe-area-inset-left, 0px);
+    --safe-area-right: env(safe-area-inset-right, 0px);
+    --bottom-nav-height: 64px;
+    --touch-target-min: 44px;
+    --font-min-size: 14px;
+    --app-transition: 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Base App Mode Overrides ── */
+body.app-mode {
+    padding-top: var(--safe-area-top);
+    padding-bottom: calc(var(--bottom-nav-height) + var(--safe-area-bottom));
+    padding-left: var(--safe-area-left);
+    padding-right: var(--safe-area-right);
+    max-width: 100vw;
+    overflow-x: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-overflow-scrolling: touch;
+    font-size: var(--font-min-size);
+}
+
+/* Edge-to-edge: override container */
+body.app-mode .container {
+    max-width: 100% !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+}
+
+/* Single column always via flex */
+body.app-mode .grid {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Restore nested grids that are inside cards */
+body.app-mode .grid.grid-cols-2 {
+    display: grid !important;
+    flex-direction: unset !important;
+}
+
+/* ── Typography ── */
+body.app-mode {
+    font-size: var(--font-min-size);
+}
+
+body.app-mode .text-xs {
+    font-size: 13px !important;
+}
+
+body.app-mode .text-sm {
+    font-size: 15px !important;
+}
+
+/* ── Touch Targets ── */
+body.app-mode button,
+body.app-mode a[role="button"],
+body.app-mode select,
+body.app-mode input:not([type="checkbox"]):not([type="radio"]),
+body.app-mode textarea,
+body.app-mode .portal-btn,
+body.app-mode .clickable {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+}
+
+/* ── Scrollbar ── */
+body.app-mode * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+body.app-mode *::-webkit-scrollbar {
+    display: none;
+}
+
+/* ── No hover on touch ── */
+@media (hover: none) {
+    body.app-mode .portal-card:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    body.app-mode .portal-card:active {
+        transform: scale(0.98) !important;
+        transition: transform 0.12s ease !important;
+    }
+}
+
+/* ── Active state feedback ── */
+body.app-mode .portal-btn:active:not(:disabled) {
+    transform: scale(0.95);
+    opacity: 0.85;
+}
+
+/* ── Universal touch-press feedback ── */
+body.app-mode button:active:not(:disabled),
+body.app-mode .app-tab-item:active,
+body.app-mode .app-select-trigger:active,
+body.app-mode .app-bottom-sheet-option:active,
+body.app-mode .portal-card:active,
+body.app-mode a[role="button"]:active {
+    transform: scale(0.97);
+    transition: transform 0.1s ease;
+}
+
+/* Stronger press for compact buttons */
+body.app-mode button.portal-btn:active:not(:disabled),
+body.app-mode .app-tab-item:active {
+    transform: scale(0.93);
+}
+
+/* Ripple-like overlay for cards */
+body.app-mode .portal-card {
+    position: relative;
+    overflow: hidden;
+}
+
+body.app-mode .portal-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(0, 0, 0, 0.08) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+
+body.app-mode .portal-card:active::after {
+    opacity: 1;
+    transition: opacity 0s;
+}
+
+/* ── Sticky nav safe area ── */
+body.app-mode nav.portal-nav-root {
+    padding-top: var(--safe-area-top);
+}
+
+/* Hide top nav in app mode — bottom nav replaces it */
+body.app-mode nav.portal-nav-root,
+body.app-mode #navMenuDropdown {
+    display: none !important;
+}
+
+/* ── Bottom Tab Navigation ── */
+.app-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(var(--bottom-nav-height) + var(--safe-area-bottom));
+    padding-bottom: var(--safe-area-bottom);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 0.5px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 100;
+    box-shadow: 0 -1px 10px rgba(0, 0, 0, 0.05);
+}
+
+.app-tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    color: #9ca3af;
+    font-size: 10px;
+    font-weight: 600;
+    transition: color 0.2s ease;
+    min-width: 64px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.app-tab-item.active {
+    color: #065f46;
+}
+
+/* Show bottom nav in app mode */
+body.app-mode .app-bottom-nav {
+    display: flex !important;
+}
+
+.app-tab-item i {
+    font-size: 20px;
+    transition: transform 0.2s ease;
+}
+
+.app-tab-item.active i {
+    transform: scale(1.1);
+}
+
+.app-tab-badge {
+    position: absolute;
+    top: 0px;
+    right: 4px;
+    background: #ef4444;
+    color: white;
+    font-size: 10px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+/* ── Page Transitions ── */
+@keyframes appSlideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes appSlideOutLeft {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+}
+
+@keyframes appSlideInLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.app-page-enter {
+    animation: appSlideInRight 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.app-page-exit {
+    animation: appSlideOutLeft 0.22s ease-in both;
+}
+
+.app-page-back {
+    animation: appSlideInLeft 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Pull-to-Refresh ── */
+.app-pull-indicator {
+    position: absolute;
+    top: -48px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
+    height: 32px;
+    border: 3px solid #d1d5db;
+    border-top-color: #065f46;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.app-pull-indicator.active {
+    opacity: 1;
+    animation: appSpin 0.8s linear infinite;
+}
+
+.app-pull-indicator.ready {
+    opacity: 1;
+    border-color: #065f46;
+}
+
+@keyframes appSpin {
+    to {
+        transform: translateX(-50%) rotate(360deg);
+    }
+}
+
+/* ── Bottom Sheet Select ── */
+.app-bottom-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+
+.app-bottom-sheet-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.app-bottom-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 16px 16px 0 0;
+    padding: 16px;
+    padding-bottom: calc(16px + var(--safe-area-bottom));
+    z-index: 201;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.app-bottom-sheet.open {
+    transform: translateY(0);
+}
+
+.app-bottom-sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: #d1d5db;
+    border-radius: 2px;
+    margin: 0 auto 12px;
+}
+
+.app-bottom-sheet-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    padding: 0 4px;
+}
+
+.app-bottom-sheet-option {
+    padding: 14px 16px;
+    font-size: 16px;
+    border-radius: 10px;
+    transition: background 0.15s;
+    cursor: pointer;
+}
+
+.app-bottom-sheet-option:active {
+    background: #f3f4f6;
+}
+
+.app-bottom-sheet-option.selected {
+    color: #065f46;
+    font-weight: 700;
+    background: #ecfdf5;
+}
+
+/* ── Custom Select Trigger ── */
+.app-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+    min-height: var(--touch-target-min);
+    transition: border-color 0.15s;
+}
+
+.app-select-trigger:active {
+    border-color: #065f46;
+}
+
+.app-select-value {
+    color: #374151;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Modal safe area ── */
+body.app-mode .portal-modal-panel {
+    padding-bottom: calc(16px + var(--safe-area-bottom));
+}
+
+/* ── Forms ── */
+body.app-mode input[type="text"],
+body.app-mode input[type="email"],
+body.app-mode input[type="password"],
+body.app-mode input[type="url"],
+body.app-mode input[type="number"],
+body.app-mode input[type="search"],
+body.app-mode textarea {
+    font-size: 16px !important;
+    /* Prevent iOS zoom on focus */
+}
+
+/* ── Hide skip-to-content in app mode ── */
+body.app-mode .skip-to-content {
+    display: none;
+}
+
+/* ── Status bar spacing for fixed headers ── */
+body.app-mode .sticky,
+body.app-mode .fixed {
+    padding-top: inherit;
+}
+
+body.app-mode nav.sticky {
+    top: var(--safe-area-top);
+}
