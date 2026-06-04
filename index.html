@@ -3,7 +3,13 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#065f46">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/assets/img/icon-192.png">
     <!-- Preconnect to critical third-party origins for faster resource loading -->
     <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
@@ -18,6 +24,7 @@
     <link rel="stylesheet" href="assets/css/portal-ui.css">
     <link rel="stylesheet" href="assets/css/toast.css">
     <link rel="stylesheet" href="assets/css/ui-states.css">
+    <link rel="stylesheet" href="assets/css/mobile-app.css">
     <style>
         /* Tailwind CDN ব্যর্থ হলেও মৌলিক ডিজাইন দৃশ্যমান থাকবে */
         body {
@@ -98,7 +105,7 @@
                 </p>
                 <label id="lblNavLang"
                     class="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Language</label>
-                <select id="langSelector"
+                <select id="langSelector" data-native
                     class="portal-field w-full mt-1 text-xs font-semibold border border-gray-200 rounded-lg p-2.5 text-emerald-900 bg-white outline-none cursor-pointer">
                     <option value="en">English</option>
                     <option value="bn">বাংলা</option>
@@ -116,7 +123,8 @@
         ⚠️ আপনার প্রোফাইলটি অসম্পূর্ণ! অনুগ্রহ করে 'My Profile' বাটনে ক্লিক করে তথ্য সম্পূর্ণ করুন।
     </div>
 
-    <div id="homeMainContent">
+    <div id="homeMainContent" data-pull-refresh="refreshStudentHome">
+        <div id="homeSection"></div>
         <header class="bg-gradient-to-r from-emerald-800 to-teal-700 text-white py-8 text-center shadow-inner">
             <div class="container mx-auto px-4">
                 <h2 id="heroTitle" class="text-2xl md:text-3xl font-extrabold mb-2">Islamic Studies Student Portal</h2>
@@ -141,7 +149,7 @@
             </div>
         </main>
 
-        <section class="container mx-auto px-4 pb-12">
+        <section class="container mx-auto px-4 pb-12" id="coursesSection">
             <div class="portal-card bg-white rounded-xl shadow-md p-6 border-t-4 border-indigo-600">
                 <div
                     class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 pb-4 border-b border-gray-200 gap-4">
@@ -153,33 +161,33 @@
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto text-xs font-semibold">
-                        <select id="filterYear"
+                        <select id="filterYear" data-native
                             class="bg-gray-50 border border-gray-300 text-emerald-800 p-2 rounded-lg outline-none">
                             <option value="1st Year">1st Year</option>
                             <option value="2nd Year">2nd Year</option>
                             <option value="3rd Year">3rd Year</option>
                             <option value="4th Year">4th Year</option>
                         </select>
-                        <select id="filterTermNum"
+                        <select id="filterTermNum" data-native
                             class="bg-gray-50 border border-gray-300 text-emerald-800 p-2 rounded-lg outline-none">
                             <option value="1st Trimester">1st Trimester</option>
                             <option value="2nd Trimester">2nd Trimester</option>
                             <option value="3rd Trimester">3rd Trimester</option>
                         </select>
-                        <select id="filterSeason"
+                        <select id="filterSeason" data-native
                             class="bg-gray-50 border border-gray-300 text-emerald-800 p-2 rounded-lg outline-none"
                             title="Session">
                             <option value="Spring">Spring</option>
                             <option value="Summer">Summer</option>
                             <option value="Fall">Fall</option>
                         </select>
-                        <select id="filterProgram"
+                        <select id="filterProgram" data-native
                             class="bg-gray-50 border border-gray-300 text-emerald-800 p-2 rounded-lg outline-none"
                             title="Regular / Weekend">
                             <option value="regular">Regular</option>
                             <option value="weekend">Weekend</option>
                         </select>
-                        <select id="filterSessionYear"
+                        <select id="filterSessionYear" data-native
                             class="bg-gray-50 border border-gray-300 text-emerald-800 p-2 rounded-lg outline-none"
                             title="Calendar year">
                             <option value="2026">2026</option>
@@ -200,6 +208,7 @@
         </section>
 
         <section class="container mx-auto px-4 pb-6" id="attendanceSummarySection">
+            <div id="attendanceSection"></div>
             <div id="attendanceSummaryContainer"></div>
         </section>
 
@@ -379,7 +388,7 @@
                 </div>
                 <div>
                     <label id="sm_type" class="block font-semibold text-gray-600 mb-1">Resource Type</label>
-                    <select id="shareType" required class="w-full p-2 border rounded bg-white">
+                    <select id="shareType" required data-native class="w-full p-2 border rounded bg-white">
                         <option value="PDF/Handnote">PDF / Handnote</option>
                         <option value="Video Lecture">Video / YouTube Link</option>
                         <option value="Audio/Voice">Audio / Voice Clip</option>
@@ -462,13 +471,20 @@
                     <div><label id="m_batch" class="block font-semibold text-gray-600 mb-0.5">Batch Number</label><input
                             type="text" id="editProfileBatch" required class="w-full p-2 border rounded text-gray-700">
                     </div>
+                    <div><label id="m_gender" class="block font-semibold text-gray-600 mb-0.5">Gender</label>
+                        <select id="editProfileGender" data-native
+                            class="w-full p-2 border rounded bg-white text-gray-700">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="bg-slate-100 p-3 rounded-xl border space-y-2">
                     <p id="m_academic_title" class="font-bold text-slate-700 text-[11px]"><i
                             class="fa-solid fa-graduation-cap mr-1"></i> Academic Session Status</p>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <select id="editProfileYear" required
+                            <select id="editProfileYear" required data-native
                                 class="w-full p-1.5 border rounded bg-white text-gray-700">
                                 <option value="1st Year">1st Year</option>
                                 <option value="2nd Year">2nd Year</option>
@@ -477,7 +493,7 @@
                             </select>
                         </div>
                         <div>
-                            <select id="editProfileTermNum" required
+                            <select id="editProfileTermNum" required data-native
                                 class="w-full p-1.5 border rounded bg-white text-gray-700">
                                 <option value="1st Trimester">1st Trimester</option>
                                 <option value="2nd Trimester">2nd Trimester</option>
@@ -485,7 +501,7 @@
                             </select>
                         </div>
                         <div>
-                            <select id="editProfileTerm" required
+                            <select id="editProfileTerm" required data-native
                                 class="w-full p-1.5 border rounded bg-white text-gray-700">
                                 <option value="Spring (regular)">Spring (regular)</option>
                                 <option value="Summer (regular)">Summer (regular)</option>
@@ -496,7 +512,7 @@
                             </select>
                         </div>
                         <div>
-                            <select id="editProfileSessionYear" required
+                            <select id="editProfileSessionYear" required data-native
                                 class="w-full p-1.5 border rounded bg-white text-gray-700">
                                 <option value="2026">2026</option>
                                 <option value="2027">2027</option>
@@ -514,7 +530,7 @@
                             class="w-full p-2 border border-gray-300 rounded"></div>
                     <div>
                         <label id="lblBloodGroup" class="block font-semibold text-gray-700 mb-0.5">Blood Group</label>
-                        <select id="editProfileBlood" required
+                        <select id="editProfileBlood" required data-native
                             class="w-full p-2 border border-gray-300 rounded bg-white">
                             <option value="">Select Blood Group</option>
                             <option value="A+">A+</option>
@@ -698,6 +714,7 @@
             document.getElementById('m_phone').innerText = t.m_phone; document.getElementById('m_emg_name').innerText = t.m_emg_name;
             document.getElementById('m_emg_phone').innerText = t.m_emg_phone; document.getElementById('m_pass_title').innerHTML = '<i class="fa-solid fa-lock mr-1"></i> ' + t.m_pass_title;
             document.getElementById('btnCancelProfile').innerText = t.btnCancelProfile; document.getElementById('btnSaveProfileText').innerText = t.btnSaveProfileText;
+            var m_gender = document.getElementById('m_gender'); if (m_gender) m_gender.innerText = t.m_gender;
 
             document.getElementById('sm_title').innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-2"></i> ' + t.sm_title;
             document.getElementById('sm_name').innerText = t.sm_name;
@@ -772,6 +789,7 @@
     <!-- ========== MODULE ORCHESTRATION SCRIPT ========== -->
     <script type="module">
         import "./assets/js/i18n.js";
+        import "./assets/js/mobile-app.js";
         import { showToast } from "./assets/js/toast.js";
         import { validateForm, clearAllErrors } from "./assets/js/form-validation.js";
         import { renderLoadingState, renderEmptyState, renderErrorState, clearUIState, skeletonCards } from "./assets/js/ui-states.js";
@@ -1406,6 +1424,7 @@
                     document.getElementById("editProfileName").value = uData.name || "";
                     document.getElementById("editProfileUID").value = uData.universityUID || "";
                     document.getElementById("editProfileBatch").value = uData.batchNumber || "";
+                    document.getElementById("editProfileGender").value = uData.gender || "Male";
                     document.getElementById("editProfilePhone").value = uData.phone || "";
                     document.getElementById("editProfileBlood").value = uData.bloodGroup || "";
                     document.getElementById("editProfileEmergencyName").value = uData.emergencyName || "";
@@ -1482,6 +1501,21 @@
                     }
                 );
 
+                // ---- Bottom tab navigation handler (app mode) ----
+                window.addEventListener("appTabChange", function (e) {
+                    var tab = e.detail.tab;
+                    if (tab === "home") {
+                        document.getElementById("homeMainContent").scrollIntoView({ behavior: "smooth", block: "start" });
+                    } else if (tab === "profile") {
+                        var btn = document.getElementById("openProfileEditBtn");
+                        if (btn) btn.click();
+                    }
+                });
+
+                // ---- Pull-to-refresh handler (app mode) ----
+                window.refreshStudentHome = function () {
+                    return updateFiltersAndListen();
+                };
 
             } catch (authErr) {
                 console.error(authErr);
@@ -1548,6 +1582,7 @@
                     name: document.getElementById('editProfileName').value.trim(),
                     universityUID: document.getElementById('editProfileUID').value.trim(),
                     batchNumber: document.getElementById('editProfileBatch').value.trim(),
+                    gender: document.getElementById('editProfileGender').value,
                     profileYear: document.getElementById('editProfileYear').value,
                     profileTermNum: document.getElementById('editProfileTermNum').value,
                     profileTerm: document.getElementById('editProfileTerm').value,
@@ -1583,6 +1618,26 @@
     </script>
     <footer class="text-center py-6 text-xs text-gray-400 border-t border-gray-200 mt-8">© 2026 DIS Student Portal. All
         rights reserved by Zubair Muhammad Zami.</footer>
+
+    <!-- Bottom Tab Navigation (app-mode only) -->
+    <nav id="appBottomNav" class="app-bottom-nav hidden">
+        <button type="button" class="app-tab-item active" data-tab="home">
+            <i class="fa-solid fa-house"></i>
+            <span>Home</span>
+        </button>
+        <button type="button" class="app-tab-item" data-tab="courses">
+            <i class="fa-solid fa-book"></i>
+            <span>Courses</span>
+        </button>
+        <button type="button" class="app-tab-item" data-tab="attendance">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span>Attendance</span>
+        </button>
+        <button type="button" class="app-tab-item" data-tab="profile">
+            <i class="fa-solid fa-user"></i>
+            <span>Profile</span>
+        </button>
+    </nav>
 </body>
 
 </html>

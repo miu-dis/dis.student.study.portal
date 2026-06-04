@@ -66,6 +66,11 @@ export function buildTodayRoutineAttendanceList(todayRoutines, recordCounts, tod
                 .filter(Boolean)
                 .map(formatTime12h)
                 .join("\u2013") || (d.timeSlot || "");
+            const genderBadge = d.gender === "Male"
+                ? `<span class="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold shrink-0">${tr("genderMale") || "Male"}</span>`
+                : d.gender === "Female"
+                    ? `<span class="text-[10px] bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded-full font-bold shrink-0">${tr("genderFemale") || "Female"}</span>`
+                    : "";
             return /* html */ `
         <div class="border border-gray-200 rounded-lg bg-white overflow-hidden routine-attendance-card" data-routine-id="${escapeHtml(id)}">
             <div class="flex items-center justify-between p-3 bg-gray-50 gap-2 flex-wrap">
@@ -73,6 +78,7 @@ export function buildTodayRoutineAttendanceList(todayRoutines, recordCounts, tod
                     <span class="text-xs font-bold text-gray-700 truncate">${escapeHtml(d.courseCode || "")} \u2014 ${escapeHtml(d.subject || d.courseTitle || "")}</span>
                     ${timeStr ? `<span class="text-[10px] text-gray-400 shrink-0">${escapeHtml(timeStr)}</span>` : ""}
                     ${d.batchNumber ? `<span class="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full font-bold shrink-0">${tr("batchLabel")} ${escapeHtml(d.batchNumber)}</span>` : ""}
+                    ${genderBadge}
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full font-bold routine-card__record-count">${count} ${tr("markedCount")}</span>
@@ -129,11 +135,16 @@ export function buildBatchAttendanceUI(routineId, routineData, students, existin
         })
         .join("");
 
+    const genderLabel = routineData.gender === "Male"
+        ? `<span class="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold">${tr("genderMale") || "Male"}</span>`
+        : routineData.gender === "Female"
+            ? `<span class="text-[10px] bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded-full font-bold">${tr("genderFemale") || "Female"}</span>`
+            : "";
     return /* html */ `
     <div class="attendance-marking" data-routine-id="${escapeHtml(routineId)}">
         <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
             <div>
-                <p class="text-xs font-bold text-gray-800">${escapeHtml(routineData.courseCode || "")} \u2014 ${escapeHtml(routineData.subject || routineData.courseTitle || "")}</p>
+                <p class="text-xs font-bold text-gray-800">${escapeHtml(routineData.courseCode || "")} \u2014 ${escapeHtml(routineData.subject || routineData.courseTitle || "")} ${genderLabel}</p>
                 <p class="text-[10px] text-gray-400">${escapeHtml(routineData.routineDate || "")}${routineData.batchNumber ? " \u2022 Batch " + escapeHtml(routineData.batchNumber) : ""}</p>
             </div>
             <div class="flex items-center gap-2">
@@ -399,6 +410,7 @@ export async function saveAttendanceRecords(routineId, routineData, records, fir
                     courseCode: routineData.courseCode || "",
                     courseTitle: routineData.subject || routineData.courseTitle || "",
                     batchNumber: routineData.batchNumber || "",
+                    gender: routineData.gender || "Combined",
                     studentUID: record.studentUID,
                     studentName: record.studentName || record.studentUID,
                     studentDisplayId: record.studentDisplayId || record.studentUID,

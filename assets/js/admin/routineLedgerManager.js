@@ -63,6 +63,7 @@ export function renderLedgerTable(snapshot, containerEl, countEl, db, docFn, upd
         '<th class="px-2 py-1.5">' + esc(t("ledgerColCourse")) + '</th>' +
         '<th class="px-2 py-1.5">' + esc(t("ledgerColSubject")) + '</th>' +
         '<th class="px-2 py-1.5">' + esc(t("ledgerColBatch")) + '</th>' +
+        '<th class="px-2 py-1.5 text-center">' + esc(t("ledgerColGender") || "Gen") + '</th>' +
         '<th class="px-2 py-1.5 text-center">' + esc(t("ledgerColHeld")) + '</th>' +
         '<th class="px-2 py-1.5">' + esc(t("ledgerColConfirmed")) + '</th>' +
         '<th class="px-2 py-1.5 text-center w-8">' + esc(t("ledgerColAction") || "Act") + '</th>' +
@@ -115,6 +116,9 @@ function renderLedgerRow(entry, idx) {
         '<td class="px-2 py-1.5 font-mono text-teal-700 font-bold">' + esc(entry.courseCode || "") + '</td>' +
         '<td class="px-2 py-1.5 max-w-[120px] truncate" title="' + esc(entry.subject || "") + '">' + esc(entry.subject || "") + '</td>' +
         '<td class="px-2 py-1.5">' + esc(entry.batchNumber || "") + '</td>' +
+        '<td class="px-2 py-1.5 text-center">' +
+        '<span class="text-[9px] px-1 py-0.5 rounded ' + (entry.gender === "Male" ? "bg-blue-100 text-blue-700" : entry.gender === "Female" ? "bg-pink-100 text-pink-700" : "bg-gray-100 text-gray-600") + '">' + esc(entry.gender || "C") + '</span>' +
+        '</td>' +
         '<td class="px-2 py-1.5 text-center">' +
         '<label class="relative inline-flex items-center cursor-pointer">' +
         '<input type="checkbox" class="sr-only peer ledger-toggle" data-id="' + esc(entry.id) + '"' + (held ? " checked" : "") + '>' +
@@ -259,7 +263,7 @@ export async function syncExistingRoutines(db, collectionFn, queryFn, whereFn, g
         snapshot.forEach(function (docSnap) {
             var data = docSnap.data();
             if (!data.routineDate || !data.courseCode) return;
-            var ledgerId = String(data.courseCode).trim().toUpperCase() + "_" + data.routineDate;
+            var ledgerId = String(data.courseCode).trim().toUpperCase() + "_" + data.routineDate + "_" + (data.gender || "Combined");
             var docRef = docFn(db, "routine_date_ledger", ledgerId);
 
             var p = getDocFn(docRef).then(function (existingDoc) {
@@ -271,6 +275,7 @@ export async function syncExistingRoutines(db, collectionFn, queryFn, whereFn, g
                         routineDate: data.routineDate,
                         batchNumber: data.batchNumber || "",
                         teacherCode: data.teacherCode || "",
+                        gender: data.gender || "Combined",
                     }, { merge: true });
                 } else {
                     // New entry — set defaults for classHeld/confirmed
@@ -280,6 +285,7 @@ export async function syncExistingRoutines(db, collectionFn, queryFn, whereFn, g
                         routineDate: data.routineDate,
                         batchNumber: data.batchNumber || "",
                         teacherCode: data.teacherCode || "",
+                        gender: data.gender || "Combined",
                         classHeld: false,
                         confirmedAt: null,
                         confirmedBy: null,

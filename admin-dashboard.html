@@ -3,7 +3,13 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#065f46">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/assets/img/icon-192.png">
     <!-- Preconnect to critical third-party origins for faster resource loading -->
     <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
@@ -18,6 +24,7 @@
     <link rel="stylesheet" href="assets/css/portal-ui.css">
     <link rel="stylesheet" href="assets/css/toast.css">
     <link rel="stylesheet" href="assets/css/ui-states.css">
+    <link rel="stylesheet" href="assets/css/mobile-app.css">
 </head>
 
 <body class="bg-gray-100 font-sans invisible portal-page-enter">
@@ -57,7 +64,8 @@
         </div>
     </div>
 
-    <main class="container mx-auto px-4 py-8 space-y-8" id="adminMainContent">
+    <main class="container mx-auto px-4 py-8 space-y-8" id="adminMainContent" data-pull-refresh="refreshAdminDashboard">
+        <div id="dashboardSection"></div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="portal-card bg-white rounded-xl shadow p-6 border-t-4 border-emerald-700">
@@ -66,7 +74,7 @@
                     <div class="relative">
                         <input type="text" id="subject" placeholder="Subject Name (type to search courses)" required
                             list="routineSubjectDatalist" autocomplete="off" class="p-2 border rounded w-full">
-                        <select id="subjectVariant"
+                        <select id="subjectVariant" data-native
                             class="hidden p-2 border rounded w-full mt-1 text-[11px] bg-amber-50 border-amber-300"
                             aria-label="Select variant">
                             <option value="">— Select Code / Teacher —</option>
@@ -78,7 +86,7 @@
                         class="p-2 border rounded"><input type="text" id="teacherCode" placeholder="Teacher Name/Code"
                         required class="p-2 border rounded">
                     <datalist id="routineSubjectDatalist"></datalist>
-                    <select id="classDay" class="p-2 border rounded">
+                    <select id="classDay" data-native class="p-2 border rounded">
                         <option value="N/A">Not Applicable</option>
                         <option value="Saturday">Saturday</option>
                         <option value="Sunday">Sunday</option>
@@ -89,11 +97,11 @@
                     </select>
                     <input type="time" id="startTime" required class="p-2 border rounded"><input type="time"
                         id="endTime" required class="p-2 border rounded">
-                    <select id="gender" class="p-2 border rounded">
+                    <select id="gender" data-native class="p-2 border rounded">
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
                         <option value="Combined">Combined</option>
-                    </select><select id="boardType" class="p-2 border rounded">
+                    </select><select id="boardType" data-native class="p-2 border rounded">
                         <option value="daily">Daily Adjustment</option>
                         <option value="permanent">Permanent Board</option>
                     </select>
@@ -111,19 +119,19 @@
                 <p class="text-[10px] text-gray-400 mb-3">কোন সেমিস্টারে কোন কোর্স হচ্ছে তা সিলেক্ট করে এড করে দিন।</p>
                 <form id="courseMapForm" class="space-y-2.5 text-xs">
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-1">
-                        <select id="mapYear" class="p-2 border rounded bg-white font-bold">
+                        <select id="mapYear" data-native class="p-2 border rounded bg-white font-bold">
                             <option value="1st Year">1st Yr</option>
                             <option value="2nd Year">2nd Yr</option>
                             <option value="3rd Year">3rd Yr</option>
                             <option value="4th Year">4th Yr</option>
                         </select>
-                        <select id="mapTermNum" class="p-2 border rounded bg-white font-bold">
+                        <select id="mapTermNum" data-native class="p-2 border rounded bg-white font-bold">
                             <option value="1st Trimester">1st Tri</option>
                             <option value="2nd Trimester">2nd Tri</option>
                             <option value="3rd Trimester">3rd Tri</option>
                         </select>
-                        <select id="mapTerm" class="p-2 border rounded bg-white font-bold"></select>
-                        <select id="mapSessYear" class="p-2 border rounded bg-white font-bold">
+                        <select id="mapTerm" data-native class="p-2 border rounded bg-white font-bold"></select>
+                        <select id="mapSessYear" data-native class="p-2 border rounded bg-white font-bold">
                             <option value="2026">2026</option>
                             <option value="2027">2027</option>
                             <option value="2028">2028</option>
@@ -188,7 +196,7 @@
                         title="Total mapped courses">0 courses</span></h3>
                 <div class="flex items-center gap-2 mb-2">
                     <span class="text-[10px] text-gray-500 shrink-0">সেমিস্টার:</span>
-                    <select id="mappingSemesterSelect"
+                    <select id="mappingSemesterSelect" data-native
                         class="w-full p-1.5 border border-indigo-200 rounded-md text-[11px] font-bold bg-white text-indigo-700 focus:ring-2 focus:ring-indigo-300 focus:outline-none">
                         <option value="__all__">📋 All Courses</option>
                     </select>
@@ -240,7 +248,7 @@
             </div>
         </div>
 
-        <div class="portal-card bg-white p-6 rounded-xl shadow border-t-4 border-purple-600 mb-8">
+        <div class="portal-card bg-white p-6 rounded-xl shadow border-t-4 border-purple-600 mb-8" id="resourcesSection">
             <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center justify-between">
                 <span><i class="fa-solid fa-folder-open text-purple-600 mr-2"></i> Student Uploaded Resources</span>
                 <span id="resourceAdminCount"
@@ -323,7 +331,7 @@
         </div>
 
         <!-- ─── Forum Moderation ──────────────────────────────── -->
-        <div class="portal-card bg-white p-6 rounded-xl shadow border-t-4 border-indigo-600 mt-6">
+        <div class="portal-card bg-white p-6 rounded-xl shadow border-t-4 border-indigo-600 mt-6" id="forumSection">
             <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center justify-between flex-wrap gap-2">
                 <span><i class="fa-solid fa-comments text-indigo-600 mr-2"></i><span id="adminForumTitle">Discussion
                         Forum</span></span>
@@ -364,6 +372,7 @@
         import { fillSessionTermSelect } from "./assets/js/academicTerms.js";
         import { initPortalUI, refreshPortalUI } from "./assets/js/portal-ui.js";
         import { t } from "./assets/js/i18n.js";
+        import "./assets/js/mobile-app.js";
 
         var adminT = function (key) { return t("admin", key); };
 
@@ -448,6 +457,32 @@
             }
         });
 
+        // ─── Bottom tab navigation handler (app mode) ───
+        window.addEventListener("appTabChange", function (e) {
+            var tab = e.detail.tab;
+            if (tab === "dashboard") {
+                document.getElementById("adminMainContent").scrollIntoView({ behavior: "smooth", block: "start" });
+            } else if (tab === "attendance") {
+                var el = document.getElementById("attendanceSection");
+                if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            } else if (tab === "forum") {
+                var el = document.getElementById("forumSection");
+                if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            } else if (tab === "resources") {
+                var el = document.getElementById("resourcesSection");
+                if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        });
+
+        // ─── Pull-to-refresh handler (app mode) ───
+        window.refreshAdminDashboard = function () {
+            return new Promise(function (resolve) {
+                // All admin data is real-time via onSnapshot listeners,
+                // so a brief delay gives the listeners time to re-sync.
+                setTimeout(resolve, 500);
+            });
+        };
+
         // ─── Board type → class day toggle ───
         const boardTypeEl = document.getElementById("boardType");
         const classDayEl = document.getElementById("classDay");
@@ -492,7 +527,8 @@
                 var routineDateEl = document.getElementById("routineDate");
                 var routineDate = routineDateEl ? routineDateEl.value : "";
                 if (courseCode && routineDate) {
-                    var ledgerId = courseCode.toUpperCase() + "_" + routineDate;
+                    var gender = document.getElementById("gender").value || "Combined";
+                    var ledgerId = courseCode.toUpperCase() + "_" + routineDate + "_" + gender;
                     try {
                         await setDoc(doc(db, "routine_date_ledger", ledgerId), {
                             courseCode: courseCode,
@@ -500,6 +536,7 @@
                             routineDate: routineDate,
                             batchNumber: document.getElementById("batchNumber").value.trim(),
                             teacherCode: document.getElementById("teacherCode").value.trim(),
+                            gender: gender,
                             classHeld: false,
                             confirmedAt: null,
                             confirmedBy: null,
@@ -931,7 +968,8 @@
                     return;
                 }
 
-                // ─── Load ALL students, filter client-side by trimester ordinal ───
+                // ─── Load ALL students, filter client-side by trimester ordinal AND gender ───
+                var routineGender = routineData.gender || "Combined";
                 var userSnap = await getDocs(
                     query(collection(db, "users"), where("role", "==", "student"))
                 );
@@ -941,6 +979,10 @@
                     var studentOrd = extractTrimesterOrdinal(data.trimester || "");
                     // Match: student's trimester ordinal must be in the resolved set
                     if (studentOrd !== null && matchingOrdinals.indexOf(studentOrd) !== -1) {
+                        // Gender filter: if routine is Male-only or Female-only, match student gender
+                        if (routineGender === "Male" || routineGender === "Female") {
+                            if ((data.gender || "") !== routineGender) return;
+                        }
                         students.push({
                             studentUID: d.id,
                             studentId: data.universityUID || data.email || d.id,
@@ -1258,6 +1300,26 @@
     </script>
     <footer class="text-center py-6 text-xs text-gray-400 border-t border-gray-200 mt-8">© 2026 DIS Student Portal. All
         rights reserved by Zubair Muhammad Zami.</footer>
+
+    <!-- Bottom Tab Navigation (app-mode only) -->
+    <nav id="appBottomNav" class="app-bottom-nav hidden">
+        <button type="button" class="app-tab-item active" data-tab="dashboard">
+            <i class="fa-solid fa-gauge"></i>
+            <span>Dashboard</span>
+        </button>
+        <button type="button" class="app-tab-item" data-tab="attendance">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span>Attendance</span>
+        </button>
+        <button type="button" class="app-tab-item" data-tab="forum">
+            <i class="fa-solid fa-comments"></i>
+            <span>Forum</span>
+        </button>
+        <button type="button" class="app-tab-item" data-tab="resources">
+            <i class="fa-solid fa-folder"></i>
+            <span>Resources</span>
+        </button>
+    </nav>
 </body>
 
 </html>

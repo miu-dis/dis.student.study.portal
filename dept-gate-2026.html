@@ -3,7 +3,13 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#065f46">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/assets/img/icon-192.png">
     <!-- Preconnect to critical third-party origins for faster resource loading -->
     <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
@@ -16,6 +22,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="assets/css/portal-ui.css">
     <link rel="stylesheet" href="assets/css/toast.css">
+    <link rel="stylesheet" href="assets/css/mobile-app.css">
 </head>
 
 <body class="portal-page-enter bg-slate-900 flex flex-col items-center justify-center min-h-screen p-4">
@@ -26,7 +33,7 @@
     <div
         class="absolute top-4 right-4 bg-slate-800 shadow rounded-lg p-1 flex items-center space-x-1 border border-slate-700">
         <span class="text-sm px-2">🌐</span>
-        <select id="langSelector"
+        <select id="langSelector" data-native
             class="bg-transparent text-sm font-semibold text-gray-300 outline-none p-1 cursor-pointer">
             <option value="en" class="bg-slate-800">English</option>
             <option value="ar" class="bg-slate-800">العربية</option>
@@ -71,6 +78,7 @@
     <!-- i18n module: apply translations -->
     <script type="module">
         import { t, getLang, setLang, getDir } from "./assets/js/i18n.js";
+        import "./assets/js/mobile-app.js";
 
         function applyLanguage(lang) {
             document.body.dir = getDir(lang);
