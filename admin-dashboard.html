@@ -286,11 +286,14 @@
                 <span id="attendanceCount" class="text-xs bg-rose-100 text-rose-800 px-2 py-1 rounded-full font-bold">0
                     <span id="attCountLabel">classes today</span></span>
             </h3>
-            <p id="attendanceDesc" class="text-[10px] text-gray-500 mb-3">Today's daily routines — click a class to mark
-                attendance by
-                batch.</p>
+            <p id="attendanceDesc" class="text-[10px] text-gray-500 mb-3">Select a date to view or edit attendance for
+                that day's classes.</p>
             <div class="mb-4">
-                <p id="todayClassesLabel" class="text-[10px] font-bold text-gray-500 uppercase mb-2">Today's Classes</p>
+                <div class="flex items-center gap-2 mb-2 flex-wrap">
+                    <p id="todayClassesLabel" class="text-[10px] font-bold text-gray-500 uppercase">Classes for</p>
+                    <input type="date" id="attendanceDatePicker"
+                        class="text-xs p-1.5 border border-gray-300 rounded bg-white font-bold text-gray-700">
+                </div>
                 <div id="attendanceRoutineList" class="space-y-2 max-h-[24rem] overflow-y-auto pr-1">
                     <div class="ui-state ui-state--loading" role="status">
                         <div class="ui-state__spinner"></div>
@@ -600,41 +603,54 @@
             syncExistingRoutines(db, collection, query, where, getDocs, setDoc, doc, showToast, adminT);
         });
 
-        // ─── Attendance: Today's daily routines real-time listener ───
+        // ─── Attendance: Date-picker driven routine list ───
         const attRoutineListEl = document.getElementById("attendanceRoutineList");
         const attCountEl = document.getElementById("attendanceCount");
         const attMarkingArea = document.getElementById("attendanceMarkingArea");
         const attReportArea = document.getElementById("attendanceReportArea");
+        const attDatePicker = document.getElementById("attendanceDatePicker");
+
+        // Set default date to today (Bangladesh timezone) and wire change listener
+        attDatePicker.value = getBangladeshToday();
+        let _selectedAttendanceDate = attDatePicker.value;
+
+        attDatePicker.addEventListener("change", function () {
+            _selectedAttendanceDate = this.value;
+            renderRoutineListForDate(_selectedAttendanceDate);
+        });
+
+        var _allDailyRoutines = [];
 
         onSnapshot(query(collection(db, "routines"), where("boardType", "==", "daily")), (snapshot) => {
-            const today = getBangladeshToday();
-            const todayRoutines = [];
+            _allDailyRoutines = [];
             snapshot.forEach((docSnap) => {
-                const d = docSnap.data();
-                if (d.routineDate === today) {
-                    todayRoutines.push({ id: docSnap.id, data: d });
-                }
+                _allDailyRoutines.push({ id: docSnap.id, data: docSnap.data() });
+            });
+            renderRoutineListForDate(_selectedAttendanceDate);
+        });
+
+        function renderRoutineListForDate(dateStr) {
+            const routinesForDate = _allDailyRoutines.filter(function (r) {
+                return r.data.routineDate === dateStr;
             });
             // Sort by startTime
-            todayRoutines.sort((a, b) => (a.data.startTime || "").localeCompare(b.data.startTime || ""));
-            cachedTodayRoutines = todayRoutines;
-            attCountEl.innerText = `${todayRoutines.length} ${adminT("classesToday")}`;
+            routinesForDate.sort(function (a, b) {
+                return (a.data.startTime || "").localeCompare(b.data.startTime || "");
+            });
+            cachedTodayRoutines = routinesForDate;
+            attCountEl.innerText = routinesForDate.length + " " + adminT("classesToday");
 
-            if (todayRoutines.length === 0) {
+            if (routinesForDate.length === 0) {
                 attRoutineListEl.innerHTML = '<p class="text-gray-400 text-xs text-center py-4">' + adminT("noClassesToday") + '</p>';
-                // Still update record counts on the empty set
                 updateRoutineRecordCounts();
                 return;
             }
 
-            // Build initial list with zero counts, then fill in as records load
-            const recordCounts = new Map();
-            todayRoutines.forEach((r) => recordCounts.set(r.id, 0));
-            attRoutineListEl.innerHTML = buildTodayRoutineAttendanceList(todayRoutines, recordCounts, today, adminT);
-
-            // Update routine record counts from cached records
+            var recordCounts = new Map();
+            routinesForDate.forEach(function (r) { recordCounts.set(r.id, 0); });
+            attRoutineListEl.innerHTML = buildTodayRoutineAttendanceList(routinesForDate, recordCounts, dateStr, adminT);
             updateRoutineRecordCounts();
-        });
+        }
 
         function updateRoutineRecordCounts() {
             if (!cachedTodayRoutines) return;
@@ -674,6 +690,7 @@
                 perStudent.get(r.studentUID).push({
                     status: r.status,
                     studentName: r.studentName,
+                    studentDisplayId: r.studentDisplayId || r.studentUID,
                     courseCode: r.courseCode || "",
                     courseTitle: r.courseTitle || "",
                 });

@@ -57,18 +57,22 @@ export function renderMyAttendanceSummary(records, t) {
     const pctClass = stats.percent >= 75 ? "text-emerald-700" : stats.percent >= 50 ? "text-amber-700" : "text-red-700";
     const pctBg = stats.percent >= 75 ? "bg-emerald-100" : stats.percent >= 50 ? "bg-amber-100" : "bg-red-100";
 
-    // Per-course breakdown
+    // Per-course breakdown — group by courseCode only, not courseTitle
     const courseMap = new Map();
     records.forEach((r) => {
-        const key = (r.courseCode || "") + "|" + (r.courseTitle || "");
-        if (!courseMap.has(key)) courseMap.set(key, []);
-        courseMap.get(key).push(r);
+        const code = (r.courseCode || "").trim().toUpperCase();
+        if (!code) return;
+        if (!courseMap.has(code)) courseMap.set(code, { title: r.courseTitle || "", recs: [] });
+        courseMap.get(code).recs.push(r);
+        // Keep the most descriptive title
+        if (r.courseTitle && r.courseTitle.length > (courseMap.get(code).title || "").length) {
+            courseMap.get(code).title = r.courseTitle;
+        }
     });
     const courseBreakdown = [];
-    courseMap.forEach((recs, key) => {
-        const [code, title] = key.split("|");
-        const cs = computeAttendanceStats(recs);
-        courseBreakdown.push({ code, title, stats: cs });
+    courseMap.forEach((entry, code) => {
+        const cs = computeAttendanceStats(entry.recs);
+        courseBreakdown.push({ code, title: entry.title, stats: cs });
     });
     courseBreakdown.sort((a, b) => a.code.localeCompare(b.code));
 
