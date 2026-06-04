@@ -63,12 +63,20 @@
             <div class="portal-card bg-white rounded-xl shadow p-6 border-t-4 border-emerald-700">
                 <h3 class="text-sm font-bold text-gray-800 mb-4">Upload Routine Schedule</h3>
                 <form id="routineForm" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                    <input type="text" id="subject" placeholder="Subject Name (type to search courses)" required
-                        list="routineSubjectDatalist" autocomplete="off" class="p-2 border rounded"><input type="text"
-                        id="courseCode" placeholder="Course Code" required class="p-2 border rounded"><input type="text"
-                        id="room" placeholder="Room No" required class="p-2 border rounded"><input type="text"
-                        id="batchNumber" placeholder="Batch" required class="p-2 border rounded"><input type="text"
-                        id="teacherCode" placeholder="Teacher Name/Code" required class="p-2 border rounded">
+                    <div class="relative">
+                        <input type="text" id="subject" placeholder="Subject Name (type to search courses)" required
+                            list="routineSubjectDatalist" autocomplete="off" class="p-2 border rounded w-full">
+                        <select id="subjectVariant"
+                            class="hidden p-2 border rounded w-full mt-1 text-[11px] bg-amber-50 border-amber-300"
+                            aria-label="Select variant">
+                            <option value="">— Select Code / Teacher —</option>
+                        </select>
+                    </div>
+                    <input type="text" id="courseCode" placeholder="Course Code" required
+                        class="p-2 border rounded"><input type="text" id="room" placeholder="Room No" required
+                        class="p-2 border rounded"><input type="text" id="batchNumber" placeholder="Batch" required
+                        class="p-2 border rounded"><input type="text" id="teacherCode" placeholder="Teacher Name/Code"
+                        required class="p-2 border rounded">
                     <datalist id="routineSubjectDatalist"></datalist>
                     <select id="classDay" class="p-2 border rounded">
                         <option value="N/A">Not Applicable</option>
@@ -592,40 +600,87 @@
         function refreshRoutineSubjectDatalist() {
             const datalist = document.getElementById("routineSubjectDatalist");
             if (!datalist) return;
-            var options = "";
-            var seen = {};
+            // Two-tier: datalist shows clean titles; _subjectVariants stores code/teacher per title
+            var variants = {};         // key: normalized title → [{code, teacher}]
+            var titleSet = {};         // dedup titles for datalist
             if (cachedMappingGroups) {
                 Object.keys(cachedMappingGroups).forEach(function (docKey) {
                     (cachedMappingGroups[docKey] || []).forEach(function (entry) {
                         var c = entry.course;
                         if (!c || !c.title) return;
-                        var code = String(c.code || "");
-                        var teacher = String(c.teacher || "");
-                        // Unique key: same title may appear with different codes/teachers
-                        var key = String(c.title).trim().toLowerCase() + "|||" + code.toLowerCase().trim() + "|||" + teacher.toLowerCase().trim();
-                        if (seen[key]) return;
-                        seen[key] = true;
-                        // Build display label — include code/teacher when present for disambiguation
-                        var label = String(c.title).trim();
-                        if (code || teacher) label += " — " + [code, teacher].filter(Boolean).join(", ");
-                        options += '<option value="' + label + '" data-code="' + code + '" data-teacher="' + teacher + '">';
+                        var title = String(c.title).trim();
+                        var normTitle = title.toLowerCase();
+                        var code = String(c.code || "").trim();
+                        var teacher = String(c.teacher || "").trim();
+                        if (!variants[normTitle]) {
+                            variants[normTitle] = [];
+                            titleSet[normTitle] = title; // preserve original casing
+                        }
+                        // dedup within same title
+                        var dup = variants[normTitle].some(function (v) {
+                            return v.code === code && v.teacher === teacher;
+                        });
+                        if (!dup) variants[normTitle].push({ code: code, teacher: teacher });
                     });
                 });
             }
+            window._subjectVariants = variants;
+            // Populate datalist with clean titles only
+            var options = "";
+            Object.keys(titleSet).sort().forEach(function (norm) {
+                options += '<option value="' + titleSet[norm] + '">';
+            });
             datalist.innerHTML = options;
+        }
+
+        // ─── Helper: apply variant to main form fields ───
+        function _applySubjectVariant(variantEl, codeEl, teacherEl) {
+            var sel = variantEl.value;
+            if (!sel) return;
+            var parts = sel.split("||");
+            codeEl.value = parts[0] || "";
+            teacherEl.value = parts[1] || "";
+            variantEl.classList.add("hidden");
         }
 
         // ─── Auto-fill course code & teacher from subject datalist ───
         document.getElementById("subject").addEventListener("input", function () {
             var val = this.value.trim();
-            var options = document.querySelectorAll("#routineSubjectDatalist option");
-            for (var i = 0; i < options.length; i++) {
-                if (options[i].value === val) {
-                    document.getElementById("courseCode").value = options[i].getAttribute("data-code") || "";
-                    document.getElementById("teacherCode").value = options[i].getAttribute("data-teacher") || "";
-                    return;
-                }
+            var normVal = val.toLowerCase();
+            var variantEl = document.getElementById("subjectVariant");
+            var codeEl = document.getElementById("courseCode");
+            var teacherEl = document.getElementById("teacherCode");
+            var variants = window._subjectVariants || {};
+            var list = variants[normVal];
+            if (!list || list.length === 0) {
+                // No match — hide variant, clear fields
+                variantEl.classList.add("hidden");
+                codeEl.value = "";
+                teacherEl.value = "";
+                return;
             }
+            if (list.length === 1) {
+                // Single variant — auto-fill directly
+                variantEl.classList.add("hidden");
+                codeEl.value = list[0].code;
+                teacherEl.value = list[0].teacher;
+            } else {
+                // Multiple variants — show picker
+                var opts = '<option value="">— Select Code / Teacher —</option>';
+                list.forEach(function (v) {
+                    var display = [v.code, v.teacher].filter(Boolean).join(", ");
+                    opts += '<option value="' + v.code + '||' + v.teacher + '">' + display + '</option>';
+                });
+                variantEl.innerHTML = opts;
+                variantEl.classList.remove("hidden");
+                codeEl.value = "";
+                teacherEl.value = "";
+            }
+        });
+
+        // ─── Variant select change → fill code/teacher ───
+        document.getElementById("subjectVariant").addEventListener("change", function () {
+            _applySubjectVariant(this, document.getElementById("courseCode"), document.getElementById("teacherCode"));
         });
 
         // ─── Routine Date Ledger real-time listener ───
@@ -1057,21 +1112,47 @@
             document.getElementById("modalFormContainer").innerHTML = buildRoutineEditForm(id, data);
             document.getElementById("editModal").classList.remove("hidden");
             document.getElementById("editModal").classList.add("flex");
-            // Refresh datalist & wire auto-fill for edit modal subject field
+            // Refresh datalist & wire two-tier auto-fill for edit modal subject field
             refreshRoutineSubjectDatalist();
             var subEl = document.getElementById("m_routine_sub");
             if (subEl) {
                 subEl.addEventListener("input", function () {
                     var val = this.value.trim();
-                    var options = document.querySelectorAll("#routineSubjectDatalist option");
-                    for (var i = 0; i < options.length; i++) {
-                        if (options[i].value === val) {
-                            document.getElementById("m_routine_code").value = options[i].getAttribute("data-code") || "";
-                            document.getElementById("m_routine_teacher").value = options[i].getAttribute("data-teacher") || "";
-                            return;
-                        }
+                    var normVal = val.toLowerCase();
+                    var variantEl = document.getElementById("m_subjectVariant");
+                    var codeEl = document.getElementById("m_routine_code");
+                    var teacherEl = document.getElementById("m_routine_teacher");
+                    var variants = window._subjectVariants || {};
+                    var list = variants[normVal];
+                    if (!list || list.length === 0) {
+                        variantEl.classList.add("hidden");
+                        codeEl.value = "";
+                        teacherEl.value = "";
+                        return;
+                    }
+                    if (list.length === 1) {
+                        variantEl.classList.add("hidden");
+                        codeEl.value = list[0].code;
+                        teacherEl.value = list[0].teacher;
+                    } else {
+                        var opts = '<option value="">— Select Code / Teacher —</option>';
+                        list.forEach(function (v) {
+                            var display = [v.code, v.teacher].filter(Boolean).join(", ");
+                            opts += '<option value="' + v.code + '||' + v.teacher + '">' + display + '</option>';
+                        });
+                        variantEl.innerHTML = opts;
+                        variantEl.classList.remove("hidden");
+                        codeEl.value = "";
+                        teacherEl.value = "";
                     }
                 });
+                // Wire variant select change handler for edit modal
+                var variantSel = document.getElementById("m_subjectVariant");
+                if (variantSel) {
+                    variantSel.addEventListener("change", function () {
+                        _applySubjectVariant(this, document.getElementById("m_routine_code"), document.getElementById("m_routine_teacher"));
+                    });
+                }
             }
         };
 

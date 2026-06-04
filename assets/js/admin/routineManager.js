@@ -165,7 +165,7 @@ export function buildRoutineEditForm(id, data) {
     const isDaily = data.boardType === "daily";
     return (
         `<div class="grid grid-cols-2 gap-2 text-xs">` +
-        `<div><label class="font-bold text-gray-600">Subject Name</label><input type="text" id="m_routine_sub" value="${esc(data.subject)}" class="w-full p-2 border rounded" list="routineSubjectDatalist" autocomplete="off"></div>` +
+        `<div><label class="font-bold text-gray-600">Subject Name</label><input type="text" id="m_routine_sub" value="${esc(data.subject)}" class="w-full p-2 border rounded" list="routineSubjectDatalist" autocomplete="off"><select id="m_subjectVariant" class="hidden p-2 border rounded w-full mt-1 text-[11px] bg-amber-50 border-amber-300" aria-label="Select variant"><option value="">— Select Code / Teacher —</option></select></div>` +
         `<div><label class="font-bold text-gray-600">Course Code</label><input type="text" id="m_routine_code" value="${esc(data.courseCode)}" class="w-full p-2 border rounded"></div>` +
         `<div><label class="font-bold text-gray-600">Room No</label><input type="text" id="m_routine_room" value="${esc(data.room)}" class="w-full p-2 border rounded"></div>` +
         `<div><label class="font-bold text-gray-600">Batch Number</label><input type="text" id="m_routine_batch" value="${esc(data.batchNumber)}" class="w-full p-2 border rounded"></div>` +
