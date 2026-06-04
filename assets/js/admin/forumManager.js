@@ -173,9 +173,11 @@ export function renderAdminForumPanel(containerEl, firestore, t, showToast, coun
     }
 
     // ── Real-time thread listener ─────────────────────────────────────
+    // NOTE: Single orderBy("createdAt") avoids requiring a composite
+    // index on isPinned+createdAt. Pinned threads are sorted client-side
+    // in refreshThreadList() so they still appear first.
     const threadsQuery = query(
         collection(db, "forum_threads"),
-        orderBy("isPinned", "desc"),
         orderBy("createdAt", "desc")
     );
 
@@ -270,6 +272,17 @@ export function renderAdminForumPanel(containerEl, firestore, t, showToast, coun
         if (dateFilter !== "all") {
             filteredThreads = filteredThreads.filter((td) => td.routineDate === dateFilter);
         }
+
+        // Sort: pinned first, then by createdAt desc (client-side,
+        // no composite index required)
+        filteredThreads = [...filteredThreads].sort((a, b) => {
+            if (a.isPinned && !b.isPinned) return -1;
+            if (!a.isPinned && b.isPinned) return 1;
+            // Both pinned or both unpinned — newer first
+            const aTime = (a.createdAt && a.createdAt.seconds) ? a.createdAt.seconds : 0;
+            const bTime = (b.createdAt && b.createdAt.seconds) ? b.createdAt.seconds : 0;
+            return bTime - aTime;
+        });
 
         // Update count
         if (countEl) {
