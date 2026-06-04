@@ -18,11 +18,12 @@ function esc(s) {
  * @param {Object} db - Firestore db instance
  * @param {Function} docFn - Firestore doc()
  * @param {Function} updateDocFn - Firestore updateDoc()
+ * @param {Function} deleteDocFn - Firestore deleteDoc()
  * @param {string} adminName - Current admin's display name
  * @param {Function} showToast - Toast notification function
  * @param {Function} t - i18n translator for admin namespace
  */
-export function renderLedgerTable(snapshot, containerEl, countEl, db, docFn, updateDocFn, adminName, showToast, t) {
+export function renderLedgerTable(snapshot, containerEl, countEl, db, docFn, updateDocFn, deleteDocFn, adminName, showToast, t) {
     if (!containerEl) return;
 
     if (snapshot.empty) {
@@ -64,6 +65,7 @@ export function renderLedgerTable(snapshot, containerEl, countEl, db, docFn, upd
         '<th class="px-2 py-1.5">' + esc(t("ledgerColBatch")) + '</th>' +
         '<th class="px-2 py-1.5 text-center">' + esc(t("ledgerColHeld")) + '</th>' +
         '<th class="px-2 py-1.5">' + esc(t("ledgerColConfirmed")) + '</th>' +
+        '<th class="px-2 py-1.5 text-center w-8">' + esc(t("ledgerColAction") || "Act") + '</th>' +
         '</tr>' +
         '</thead>' +
         '<tbody>' +
@@ -86,6 +88,13 @@ export function renderLedgerTable(snapshot, containerEl, countEl, db, docFn, upd
             confirmAllVisible(entries, db, docFn, updateDocFn, adminName, showToast, t);
         });
     }
+
+    // Wire delete buttons
+    containerEl.querySelectorAll(".ledger-delete-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            handleLedgerDelete(this, db, docFn, deleteDocFn, showToast, t);
+        });
+    });
 }
 
 /**
@@ -113,6 +122,9 @@ function renderLedgerRow(entry, idx) {
         '</label>' +
         '</td>' +
         '<td class="px-2 py-1.5 text-[9px]">' + confirmedInfo + '</td>' +
+        '<td class="px-2 py-1.5 text-center">' +
+        '<button type="button" class="ledger-delete-btn text-red-400 hover:text-red-600 text-xs p-0.5 rounded hover:bg-red-50 transition" data-id="' + esc(entry.id) + '" title="Delete">&#128465;</button>' +
+        '</td>' +
         '</tr>';
 }
 
@@ -192,6 +204,30 @@ export async function confirmAllVisible(entries, db, docFn, updateDocFn, adminNa
 }
 
 /**
+ * Delete a single ledger entry.
+ * @param {HTMLButtonElement} btn - The delete button that was clicked
+ * @param {Object} db - Firestore db instance
+ * @param {Function} docFn - Firestore doc()
+ * @param {Function} deleteDocFn - Firestore deleteDoc()
+ * @param {Function} showToast - Toast notification function
+ * @param {Function} t - i18n translator
+ */
+async function handleLedgerDelete(btn, db, docFn, deleteDocFn, showToast, t) {
+    var entryId = btn.dataset.id;
+    if (!entryId) return;
+    if (!confirm(t("ledgerDeleteConfirm") || "Delete this ledger entry? This cannot be undone.")) return;
+    btn.disabled = true;
+    try {
+        await deleteDocFn(docFn(db, "routine_date_ledger", entryId));
+        showToast(t("ledgerDeleted") || "Ledger entry deleted.", "success");
+    } catch (err) {
+        console.error("Failed to delete ledger entry:", err);
+        showToast(t("alertActionFailed") || "Delete failed.", "error");
+        btn.disabled = false;
+    }
+}
+
+/**
  * One-time sync: pull all existing daily routines into the ledger.
  * Safe to run multiple times — uses merge:true so existing entries aren't overwritten.
  * @param {Object} db - Firestore db instance
@@ -205,7 +241,7 @@ export async function confirmAllVisible(entries, db, docFn, updateDocFn, adminNa
  * @param {Function} t - i18n translator for admin namespace
  * @returns {Promise<number>} count of synced entries
  */
-export async function syncExistingRoutines(db, collectionFn, queryFn, whereFn, getDocsFn, setDocFn, docFn, showToast, t) {
+export async function syncExistingRoutines(db, collectionFn, queryFn, whereFn, getDocsFn, setDocFn, docFn, getDocFn, showToast, t) {
     var btn = document.getElementById("ledgerSyncBtn");
     if (btn) { btn.disabled = true; btn.innerText = t("ledgerSyncing"); }
 
@@ -219,24 +255,43 @@ export async function syncExistingRoutines(db, collectionFn, queryFn, whereFn, g
         }
 
         var synced = 0;
+        var promises = [];
         snapshot.forEach(function (docSnap) {
             var data = docSnap.data();
             if (!data.routineDate || !data.courseCode) return;
             var ledgerId = String(data.courseCode).trim().toUpperCase() + "_" + data.routineDate;
-            setDocFn(docFn(db, "routine_date_ledger", ledgerId), {
-                courseCode: data.courseCode,
-                subject: data.subject || "",
-                routineDate: data.routineDate,
-                batchNumber: data.batchNumber || "",
-                teacherCode: data.teacherCode || "",
-                classHeld: false,
-                confirmedAt: null,
-                confirmedBy: null,
-                createdAt: new Date().toISOString(),
-            }, { merge: true });
+            var docRef = docFn(db, "routine_date_ledger", ledgerId);
+
+            var p = getDocFn(docRef).then(function (existingDoc) {
+                if (existingDoc.exists()) {
+                    // Existing entry — only update the reference fields, preserve classHeld/confirmed
+                    return setDocFn(docRef, {
+                        courseCode: data.courseCode,
+                        subject: data.subject || "",
+                        routineDate: data.routineDate,
+                        batchNumber: data.batchNumber || "",
+                        teacherCode: data.teacherCode || "",
+                    }, { merge: true });
+                } else {
+                    // New entry — set defaults for classHeld/confirmed
+                    return setDocFn(docRef, {
+                        courseCode: data.courseCode,
+                        subject: data.subject || "",
+                        routineDate: data.routineDate,
+                        batchNumber: data.batchNumber || "",
+                        teacherCode: data.teacherCode || "",
+                        classHeld: false,
+                        confirmedAt: null,
+                        confirmedBy: null,
+                        createdAt: new Date().toISOString(),
+                    }, { merge: true });
+                }
+            });
+            promises.push(p);
             synced++;
         });
 
+        await Promise.all(promises);
         showToast(synced + " " + t("ledgerSyncDone"), "success");
         return synced;
     } catch (err) {

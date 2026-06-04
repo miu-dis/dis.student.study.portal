@@ -592,7 +592,7 @@
                 snapshot,
                 document.getElementById("adminLedgerList"),
                 document.getElementById("ledgerCount"),
-                db, doc, updateDoc,
+                db, doc, updateDoc, deleteDoc,
                 _currentAdminName,
                 showToast, adminT
             );
@@ -600,7 +600,7 @@
 
         // ─── Sync Existing Routines button ───
         document.getElementById("ledgerSyncBtn").addEventListener("click", function () {
-            syncExistingRoutines(db, collection, query, where, getDocs, setDoc, doc, showToast, adminT);
+            syncExistingRoutines(db, collection, query, where, getDocs, setDoc, doc, getDoc, showToast, adminT);
         });
 
         // ─── Attendance: Date-picker driven routine list ───
@@ -693,6 +693,9 @@
                     studentDisplayId: r.studentDisplayId || r.studentUID,
                     courseCode: r.courseCode || "",
                     courseTitle: r.courseTitle || "",
+                    recordId: r.id || "",
+                    routineId: r.routineId || "",
+                    routineDate: r.routineDate || "",
                 });
             });
             if (perStudent.size === 0) {
@@ -700,6 +703,80 @@
                 return;
             }
             attReportArea.innerHTML = renderAttendanceReport(perStudent, adminT);
+
+            // ─── Wire expand/collapse toggles ───
+            attReportArea.querySelectorAll(".att-expand-btn").forEach((btn) => {
+                btn.addEventListener("click", function () {
+                    const uid = this.dataset.studentUid;
+                    const detailRow = attReportArea.querySelector(".att-detail-row[data-student-uid='" + CSS.escape(uid) + "']");
+                    if (!detailRow) return;
+                    const isHidden = detailRow.classList.contains("hidden");
+                    if (isHidden) {
+                        detailRow.classList.remove("hidden");
+                        this.textContent = "\u25BC";
+                        this.style.transform = "rotate(0deg)";
+                    } else {
+                        detailRow.classList.add("hidden");
+                        this.textContent = "\u25B6";
+                        this.style.transform = "rotate(0deg)";
+                    }
+                });
+            });
+
+            // ─── Wire main-row click to also toggle expand ───
+            attReportArea.querySelectorAll(".att-report-main-row").forEach((row) => {
+                row.addEventListener("click", function (e) {
+                    // Don't toggle if clicking on a button inside the row
+                    if (e.target.closest("button")) return;
+                    const uid = this.dataset.studentUid;
+                    const btn = attReportArea.querySelector(".att-expand-btn[data-student-uid='" + CSS.escape(uid) + "']");
+                    if (btn) btn.click();
+                });
+            });
+
+            // ─── Wire "Edit" buttons inside detail rows ───
+            attReportArea.querySelectorAll("[data-action='edit-att-record']").forEach((btn) => {
+                btn.addEventListener("click", async function (e) {
+                    e.stopPropagation();
+                    const routineId = this.dataset.routineId;
+                    const routine = cachedTodayRoutines.find((r) => r.id === routineId);
+                    if (!routine) {
+                        showToast(adminT("attRoutineNotFound") || "Routine not found in current list. Try selecting the matching date.", "warning");
+                        return;
+                    }
+                    // Trigger the same "Mark Attendance" flow for this routine
+                    const markBtn = document.createElement("button");
+                    markBtn.dataset.action = "mark-routine";
+                    markBtn.dataset.routineId = routineId;
+                    // Simulate the click using the existing delegation handler
+                    const fakeEvent = { target: markBtn };
+                    // We can't directly dispatch to the delegation handler, so we re-trigger
+                    // by finding the actual routine card and clicking its mark button
+                    const realBtn = attRoutineListEl.querySelector("[data-action='mark-routine'][data-routine-id='" + CSS.escape(routineId) + "']");
+                    if (realBtn) {
+                        realBtn.click();
+                    } else {
+                        showToast(adminT("attRoutineNotInList") || "Routine card not visible. Select the correct date and try again.", "warning");
+                    }
+                });
+            });
+
+            // ─── Wire "Delete" buttons inside detail rows ───
+            attReportArea.querySelectorAll("[data-action='delete-att-record']").forEach((btn) => {
+                btn.addEventListener("click", async function (e) {
+                    e.stopPropagation();
+                    const recordId = this.dataset.recordId;
+                    if (!recordId) return;
+                    if (!confirm(adminT("attDeleteRecordConfirm") || "Delete this attendance record? This will sync to the student's main page.")) return;
+                    try {
+                        await deleteDoc(doc(db, "attendance_records", recordId));
+                        showToast(adminT("attRecordDeleted") || "Attendance record deleted.", "success");
+                    } catch (err) {
+                        console.error("Delete attendance record error:", err);
+                        showToast(adminT("alertActionFailed"), "error");
+                    }
+                });
+            });
         }
 
         // ─── "Mark Attendance" button click delegation ───

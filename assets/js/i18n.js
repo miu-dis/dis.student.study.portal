@@ -357,6 +357,16 @@ const TRANSLATIONS = {
             ledgerSyncDone: "daily routines synced to ledger.",
             ledgerSyncNone: "No existing daily routines found to sync.",
             ledgerSyncFailed: "Sync failed",
+            // Attendance report drill-down
+            attExpandHint: "Click to expand/collapse course details",
+            attEdit: "Edit",
+            attDelete: "Delete",
+            attDeleteRecordConfirm: "Delete this attendance record? This will sync to the student's page.",
+            attRecordDeleted: "Attendance record deleted.",
+            // Ledger action column
+            ledgerColAction: "Act",
+            ledgerDeleteConfirm: "Delete this ledger entry? This cannot be undone.",
+            ledgerDeleted: "Ledger entry deleted.",
         },
         bn: {
             logoutConfirm: "à¦²à¦—à¦†à¦‰à¦Ÿ à¦•à¦°à¦¬à§‡à¦¨?", unsavedChanges: "à¦†à¦ªà¦¨à¦¾à¦° à¦ªà¦°à¦¿à¦¬à¦°à§à¦¤à¦¨ à¦¸à§‡à¦­ à¦¹à¦¯à¦¼à¦¨à¦¿à¥¤ à¦¬à¦¾à¦¤à¦¿à¦² à¦•à¦°à¦¬à§‡à¦¨?",
@@ -445,6 +455,16 @@ const TRANSLATIONS = {
             ledgerSyncDone: "à¦Ÿà¦¿ à¦¡à§‡à¦‡à¦²à¦¿ à¦°à§à¦Ÿà¦¿à¦¨ à¦²à§‡à¦œà¦¾à¦°à§‡ à¦¸à¦¿à¦™à§à¦• à¦¹à¦¯à¦¼à§‡à¦›à§‡à¥¤",
             ledgerSyncNone: "à¦•à§‹à¦¨à§‹ à¦ªà§‚à¦°à§à¦¬à§‡à¦° à¦¡à§‡à¦‡à¦²à¦¿ à¦°à§à¦Ÿà¦¿à¦¨ à¦ªà¦¾à¦“à¦¯à¦¼à¦¾ à¦¯à¦¾à¦¯à¦¼à¦¨à¦¿à¥¤",
             ledgerSyncFailed: "à¦¸à¦¿à¦™à§à¦• à¦¬à§à¦¯à¦°à§à¦¥",
+            // Attendance report drill-down
+            attExpandHint: "কোর্সের বিস্তারিত দেখতে/লুকাতে ক্লিক করুন",
+            attEdit: "এডিট",
+            attDelete: "ডিলিট",
+            attDeleteRecordConfirm: "এই হাজিরা রেকর্ড ডিলিট করবেন? এটি স্টুডেন্টের পেইজে সিঙ্ক হবে।",
+            attRecordDeleted: "হাজিরা রেকর্ড ডিলিট হয়েছে।",
+            // Ledger action column
+            ledgerColAction: "অ্যাকশন",
+            ledgerDeleteConfirm: "এই লেজার এন্ট্রি ডিলিট করবেন? এটি পুনরায় ফেরত আনা যাবে না।",
+            ledgerDeleted: "লেজার এন্ট্রি ডিলিট হয়েছে।",
             // Forum moderation
             forumTitle: "à¦†à¦²à§‹à¦šà¦¨à¦¾ à¦«à§‹à¦°à¦¾à¦® à¦®à¦¡à¦¾à¦°à§‡à¦¶à¦¨",
             noForumThreads: "à¦•à§‹à¦¨à§‹ à¦†à¦²à§‹à¦šà¦¨à¦¾ à¦¥à§à¦°à§‡à¦¡ à¦ªà¦¾à¦“à¦¯à¦¼à¦¾ à¦¯à¦¾à¦¯à¦¼à¦¨à¦¿à¥¤",

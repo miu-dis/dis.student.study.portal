@@ -255,8 +255,12 @@ export function computeAttendanceStats(records) {
 }
 
 /**
- * Render attendance report summary across all students.
- * @param {Map<string, Array<{ status: string, studentName: string }>>} perStudentRecords
+ * Render attendance report summary across all students — with expandable per-course drill-down.
+ * Each record should include: status, studentName, studentDisplayId, courseCode, courseTitle,
+ * recordId (Firestore doc id), routineId, routineDate.
+ * @param {Map<string, Array<{ status: string, studentName: string, studentDisplayId: string,
+ *   courseCode: string, courseTitle: string, recordId: string, routineId: string, routineDate: string }>>} perStudentRecords
+ * @param {Function} t - i18n translator
  * @returns {string} HTML
  */
 export function renderAttendanceReport(perStudentRecords, t) {
@@ -272,15 +276,67 @@ export function renderAttendanceReport(perStudentRecords, t) {
         const bgClass =
             stats.percent >= 75 ? "bg-emerald-100" : stats.percent >= 50 ? "bg-amber-100" : "bg-red-100";
         const studentName = records[0]?.studentName || studentUID;
+        const displayId = records[0]?.studentDisplayId || studentUID;
+
+        // Build per-course sub-rows for the detail section
+        const detailRows = records.map((r) => {
+            const statusLabel = r.status === "present" ? (tr("statusPresent") || "Present") : (tr("statusAbsent") || "Absent");
+            const statusBadgeClass = r.status === "present"
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-red-100 text-red-700";
+            const dateDisplay = r.routineDate || "";
+            const courseCode = escapeHtml(r.courseCode || "");
+            const courseTitle = escapeHtml(r.courseTitle || "");
+            const recordId = escapeHtml(r.recordId || "");
+            const routineId = escapeHtml(r.routineId || "");
+            return /* html */ `
+            <tr class="border-b border-gray-100 text-[10px]">
+                <td class="py-1 px-2 font-mono text-teal-700 font-bold">${courseCode}</td>
+                <td class="py-1 px-2 text-gray-600 max-w-[140px] truncate" title="${courseTitle}">${courseTitle}</td>
+                <td class="py-1 px-2 text-gray-500 font-mono">${dateDisplay}</td>
+                <td class="py-1 px-2"><span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold ${statusBadgeClass}">${statusLabel}</span></td>
+                <td class="py-1 px-1 text-center">
+                    <button type="button" data-action="edit-att-record" data-routine-id="${routineId}" data-record-id="${recordId}"
+                        class="text-blue-600 hover:text-blue-800 text-[10px] font-semibold px-1.5 py-0.5 rounded hover:bg-blue-50" title="Edit">&#9998;</button>
+                </td>
+                <td class="py-1 px-1 text-center">
+                    <button type="button" data-action="delete-att-record" data-record-id="${recordId}"
+                        class="text-red-500 hover:text-red-700 text-[10px] font-semibold px-1.5 py-0.5 rounded hover:bg-red-50" title="Delete">&#128465;</button>
+                </td>
+            </tr>`;
+        }).join("");
+
         rows.push(/* html */ `
-        <tr class="border-b border-gray-100 hover:bg-gray-50">
-            <td class="py-2 px-2 text-xs font-semibold text-gray-800">${escapeHtml(records[0]?.studentDisplayId || studentUID)}</td>
+        <tr class="border-b border-gray-100 hover:bg-gray-50 cursor-pointer att-report-main-row" data-student-uid="${escapeHtml(studentUID)}">
+            <td class="py-2 px-1 text-center">
+                <button type="button" class="att-expand-btn text-gray-400 hover:text-gray-700 text-xs transition-transform duration-200" data-student-uid="${escapeHtml(studentUID)}" title="${escapeHtml(tr("attExpandHint") || "Click to expand")}">&#9654;</button>
+            </td>
+            <td class="py-2 px-2 text-xs font-semibold text-gray-800">${escapeHtml(displayId)}</td>
             <td class="py-2 px-2 text-xs text-gray-700">${escapeHtml(studentName)}</td>
             <td class="py-2 px-2 text-xs text-gray-500">${stats.present}/${stats.total}</td>
             <td class="py-2 px-2">
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${bgClass} ${colorClass}">
                     ${stats.percent}%
                 </span>
+            </td>
+        </tr>
+        <tr class="att-detail-row hidden" data-student-uid="${escapeHtml(studentUID)}">
+            <td colspan="5" class="p-0 bg-gray-50/80">
+                <div class="px-3 py-2 border-t border-gray-100">
+                    <table class="w-full text-left">
+                        <thead class="text-[9px] text-gray-400 uppercase border-b border-gray-100">
+                            <tr>
+                                <th class="py-1 px-2">${tr("ledgerColCourse") || "Code"}</th>
+                                <th class="py-1 px-2">${tr("ledgerColSubject") || "Subject"}</th>
+                                <th class="py-1 px-2">${tr("ledgerColDate") || "Date"}</th>
+                                <th class="py-1 px-2">${tr("statusCol") || "Status"}</th>
+                                <th class="py-1 px-1 text-center">${escapeHtml(tr("attEdit") || "Edit")}</th>
+                                <th class="py-1 px-1 text-center">${escapeHtml(tr("attDelete") || "Del")}</th>
+                            </tr>
+                        </thead>
+                        <tbody>${detailRows}</tbody>
+                    </table>
+                </div>
             </td>
         </tr>`);
     });
@@ -289,6 +345,7 @@ export function renderAttendanceReport(perStudentRecords, t) {
         <table class="w-full text-left">
             <thead class="bg-gray-50 border-b">
                 <tr>
+                    <th class="py-2 px-1 w-8"></th>
                     <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">${tr("studentIdCol")}</th>
                     <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">${tr("nameCol")}</th>
                     <th class="py-2 px-2 text-[10px] font-bold text-gray-500 uppercase">${tr("attendanceCol")}</th>
