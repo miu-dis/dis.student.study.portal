@@ -63,12 +63,13 @@
             <div class="portal-card bg-white rounded-xl shadow p-6 border-t-4 border-emerald-700">
                 <h3 class="text-sm font-bold text-gray-800 mb-4">Upload Routine Schedule</h3>
                 <form id="routineForm" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                    <input type="text" id="subject" placeholder="Subject Name" required
-                        class="p-2 border rounded"><input type="text" id="courseCode" placeholder="Course Code" required
-                        class="p-2 border rounded"><input type="text" id="room" placeholder="Room No" required
-                        class="p-2 border rounded"><input type="text" id="batchNumber" placeholder="Batch" required
-                        class="p-2 border rounded"><input type="text" id="teacherCode" placeholder="Teacher Name/Code"
-                        required class="p-2 border rounded">
+                    <input type="text" id="subject" placeholder="Subject Name (type to search courses)" required
+                        list="routineSubjectDatalist" autocomplete="off" class="p-2 border rounded"><input type="text"
+                        id="courseCode" placeholder="Course Code" required class="p-2 border rounded"><input type="text"
+                        id="room" placeholder="Room No" required class="p-2 border rounded"><input type="text"
+                        id="batchNumber" placeholder="Batch" required class="p-2 border rounded"><input type="text"
+                        id="teacherCode" placeholder="Teacher Name/Code" required class="p-2 border rounded">
+                    <datalist id="routineSubjectDatalist"></datalist>
                     <select id="classDay" class="p-2 border rounded">
                         <option value="N/A">Not Applicable</option>
                         <option value="Saturday">Saturday</option>
@@ -584,6 +585,43 @@
                 });
             renderMappingListForTab(cachedMappingGroups, activeMappingTab,
                 document.getElementById("adminMappingList"));
+            refreshRoutineSubjectDatalist();
+        });
+
+        // ─── Refresh routine subject datalist from course mappings ───
+        function refreshRoutineSubjectDatalist() {
+            const datalist = document.getElementById("routineSubjectDatalist");
+            if (!datalist) return;
+            var options = "";
+            var seen = {};
+            if (cachedMappingGroups) {
+                Object.keys(cachedMappingGroups).forEach(function (docKey) {
+                    (cachedMappingGroups[docKey] || []).forEach(function (entry) {
+                        var c = entry.course;
+                        if (c && c.title && !seen[c.title]) {
+                            seen[c.title] = true;
+                            var code = String(c.code || "");
+                            var teacher = String(c.teacher || "");
+                            var titleEsc = String(c.title);
+                            options += '<option value="' + titleEsc + '" data-code="' + code + '" data-teacher="' + teacher + '">';
+                        }
+                    });
+                });
+            }
+            datalist.innerHTML = options;
+        }
+
+        // ─── Auto-fill course code & teacher from subject datalist ───
+        document.getElementById("subject").addEventListener("input", function () {
+            var val = this.value.trim();
+            var options = document.querySelectorAll("#routineSubjectDatalist option");
+            for (var i = 0; i < options.length; i++) {
+                if (options[i].value === val) {
+                    document.getElementById("courseCode").value = options[i].getAttribute("data-code") || "";
+                    document.getElementById("teacherCode").value = options[i].getAttribute("data-teacher") || "";
+                    return;
+                }
+            }
         });
 
         // ─── Routine Date Ledger real-time listener ───
@@ -1015,6 +1053,22 @@
             document.getElementById("modalFormContainer").innerHTML = buildRoutineEditForm(id, data);
             document.getElementById("editModal").classList.remove("hidden");
             document.getElementById("editModal").classList.add("flex");
+            // Refresh datalist & wire auto-fill for edit modal subject field
+            refreshRoutineSubjectDatalist();
+            var subEl = document.getElementById("m_routine_sub");
+            if (subEl) {
+                subEl.addEventListener("input", function () {
+                    var val = this.value.trim();
+                    var options = document.querySelectorAll("#routineSubjectDatalist option");
+                    for (var i = 0; i < options.length; i++) {
+                        if (options[i].value === val) {
+                            document.getElementById("m_routine_code").value = options[i].getAttribute("data-code") || "";
+                            document.getElementById("m_routine_teacher").value = options[i].getAttribute("data-teacher") || "";
+                            return;
+                        }
+                    }
+                });
+            }
         };
 
         window.openNoticeEditModal = (id) => {

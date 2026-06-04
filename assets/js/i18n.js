@@ -109,6 +109,7 @@ const TRANSLATIONS = {
             forumAllDates: "All Dates",
             forumTagDate: "Tag to Class Date",
             forumNoDate: "No Date (General)",
+            attExpandHint: "Click to expand", attendanceCol: "Attendance", percentCol: "%",
         },
         bn: {
             navTitle: "à¦¡à¦¿à¦†à¦‡à¦à¦¸ à¦¸à§à¦Ÿà§à¦¡à§‡à¦¨à§à¦Ÿ à¦ªà§‹à¦°à§à¦Ÿà¦¾à¦²", btnNavLogin: "à¦²à¦—à¦‡à¦¨ / à¦°à§‡à¦œà¦¿à¦¸à§à¦Ÿà¦¾à¦°", btnMyProfile: "à¦†à¦®à¦¾à¦° à¦ªà§à¦°à§‹à¦«à¦¾à¦‡à¦²", btnLogout: "à¦²à¦—à¦†à¦‰à¦Ÿ",
@@ -208,6 +209,7 @@ const TRANSLATIONS = {
             forumAllDates: "à¦¸à¦¬à¦—à§à¦²à§‹ à¦¤à¦¾à¦°à¦¿à¦–",
             forumTagDate: "à¦•à§à¦²à¦¾à¦¸à§‡à¦° à¦¤à¦¾à¦°à¦¿à¦–à§‡ à¦Ÿà§à¦¯à¦¾à¦— à¦•à¦°à§à¦¨",
             forumNoDate: "à¦•à§‹à¦¨à§‹ à¦¤à¦¾à¦°à¦¿à¦– à¦¨à§‡à¦‡ (à¦¸à¦¾à¦§à¦¾à¦°à¦£)",
+            attExpandHint: "বিস্তারিত দেখতে ক্লিক করুন", attendanceCol: "উপস্থিতি", percentCol: "%",
         }
     },
 

@@ -806,7 +806,7 @@
             handleResourceSubmit,
             refreshShareModalLabels,
         } from "./assets/js/portal/upload.js";
-        import { renderMyAttendanceSummary } from "./assets/js/portal/attendance.js";
+        import { renderMyAttendanceDetail } from "./assets/js/portal/attendance.js";
         import { renderForumTab } from "./assets/js/portal/forum.js";
         import { openDailyResourcesView, closeDailyResourcesView, initDailyResourcesNav } from "./assets/js/portal/dailyResources.js";
 
@@ -1462,7 +1462,23 @@
                             });
                         });
                         document.getElementById("attendanceSummaryContainer").innerHTML =
-                            renderMyAttendanceSummary(records, window.portalT);
+                            renderMyAttendanceDetail(records, window.portalT);
+
+                        // Wire expand/collapse toggles for per-course detail rows
+                        var container = document.getElementById("attendanceSummaryContainer");
+                        container.querySelectorAll(".att-detail-main-row").forEach(function (row) {
+                            row.addEventListener("click", function () {
+                                var code = this.getAttribute("data-course-code");
+                                var subRow = container.querySelector('.att-detail-sub-row[data-course-code="' + CSS.escape(code) + '"]');
+                                var btn = this.querySelector(".att-detail-expand-btn");
+                                if (subRow) {
+                                    subRow.classList.toggle("hidden");
+                                    if (btn) {
+                                        btn.style.transform = subRow.classList.contains("hidden") ? "rotate(0deg)" : "rotate(90deg)";
+                                    }
+                                }
+                            });
+                        });
                     }
                 );
 
