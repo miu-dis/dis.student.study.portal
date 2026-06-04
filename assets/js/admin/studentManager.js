@@ -16,7 +16,7 @@ export function renderStudentTable(snapshot, tbodyEl) {
             const safeName = (data.name || "User").replace(/'/g, "\\'");
             const safeEmail = (data.email || "").replace(/'/g, "\\'");
             return `<tr>
-                <td class="px-4 py-3 font-bold">${data.name || "N/A"}<br><span class="text-[10px] text-gray-400">UID: ${data.universityUID}</span></td>
+                <td class="px-4 py-3 font-bold">${data.name || "N/A"}<br><span class="text-[10px] text-gray-400">UID: ${data.universityUID || data.email || id}</span></td>
                 <td class="px-4 py-3">Batch: ${data.batchNumber}<br><span class="text-[10px] text-indigo-700 font-bold">${data.trimester || "N/A"}</span></td>
                 <td class="px-4 py-3 font-extrabold text-red-600">${data.bloodGroup || "PENDING"}</td>
                 <td class="px-4 py-3">${data.phone || "PENDING"}</td>

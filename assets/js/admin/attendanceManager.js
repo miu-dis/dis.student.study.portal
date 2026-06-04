@@ -212,7 +212,7 @@ export function renderAttendanceRecords(records, t) {
             const statusLabel = r.status === "present" ? tr("statusPresent") : tr("statusAbsent");
             return /* html */ `
         <tr class="border-b border-gray-100">
-            <td class="py-1.5 px-2 text-xs font-semibold text-gray-800">${escapeHtml(r.studentUID)}</td>
+            <td class="py-1.5 px-2 text-xs font-semibold text-gray-800">${escapeHtml(r.studentDisplayId || r.studentUID)}</td>
             <td class="py-1.5 px-2 text-xs text-gray-700">${escapeHtml(r.studentName)}</td>
             <td class="py-1.5 px-2">
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold ${meta.color}">
@@ -274,7 +274,7 @@ export function renderAttendanceReport(perStudentRecords, t) {
         const studentName = records[0]?.studentName || studentUID;
         rows.push(/* html */ `
         <tr class="border-b border-gray-100 hover:bg-gray-50">
-            <td class="py-2 px-2 text-xs font-semibold text-gray-800">${escapeHtml(studentUID)}</td>
+            <td class="py-2 px-2 text-xs font-semibold text-gray-800">${escapeHtml(records[0]?.studentDisplayId || studentUID)}</td>
             <td class="py-2 px-2 text-xs text-gray-700">${escapeHtml(studentName)}</td>
             <td class="py-2 px-2 text-xs text-gray-500">${stats.present}/${stats.total}</td>
             <td class="py-2 px-2">
